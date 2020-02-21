@@ -87,7 +87,7 @@ class ElementBoundary : public ElementTriangular<P, I>{
 }
 
 int test2(){
-	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
+	FEM_module::ImporterMsh<double, long> mesh_importer("pear.msh");
 	mesh_importer.process_file();
 	const vector<vector<double>> coords = mesh_importer.node_matrix();
 	vector<long> nodes_from_element;
