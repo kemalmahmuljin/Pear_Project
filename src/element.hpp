@@ -7,8 +7,6 @@
 #include "Importer.hpp"
 
 
-using namespace std;
-
 namespace FEM_module{
 
 template <typename P, typename I>
@@ -68,6 +66,19 @@ class ElementTriangular{
 			(coordinates[nodes[2]][1] - coordinates[nodes[1]][1]);
 		return (slope_1 < slope_2);
 		}
+
+	public:
+		int surface(const vector<vector<precision_t>>& coordinates){}
+
+		int update_stiffness_matrix(
+				const vector<vector<precision_t>>& coordinates
+				vector<vector<precision_t>>& global_stiffness){
+			/*
+			Updates the global stiffness matrix
+			*/
+			return EXIT_SUCCESS;
+		}
+
 };
 
 template <typename P, typename I>
@@ -83,11 +94,26 @@ class ElementBoundary : public ElementTriangular<P, I>{
 				const vector<node_t>& nodes)
 		: ElementTriangular<precision_t, node_t>(coordinates, nodes)
 		{}
+
+		int update_stiffness_matrix(
+				const vector<vector<precision_t>>& coordinates
+				vector<vector<precision_t>>& global_stiffness){
+			/*
+			Updates the global stiffness matrix
+			*/
+			return EXIT_SUCCESS;
+		}
+
+		int update_vector_f(const vector<vector<precision_t>>& coordinates, 
+				vector<precision_t>& vector_f){
+				
+			return EXIT_SUCCESS;
+		}
 };
 }
 
 int test2(){
-	FEM_module::ImporterMsh<double, long> mesh_importer("pear.msh");
+	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
 	mesh_importer.process_file();
 	const vector<vector<double>> coords = mesh_importer.node_matrix();
 	vector<long> nodes_from_element;
@@ -99,10 +125,5 @@ int test2(){
 		}
 		std::cout<<std::endl;
 	}
-	return EXIT_SUCCESS;
-}
-
-int main(){
-	test2();
 	return EXIT_SUCCESS;
 }
