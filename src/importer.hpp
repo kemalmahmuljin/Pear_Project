@@ -5,9 +5,6 @@
 #include <iostream>
 #include <assert.h>
 
-
-using namespace std;
-
 namespace FEM_module{
 
 std::vector<std::string> split(const std::string& input, char delimiter);
@@ -16,8 +13,8 @@ class Importer{
 	public:
 		typedef P precision_t;
 		typedef I mesh_size_t;
-		typedef std::vector<vector<precision_t>> coord_vector_t;
-		typedef std::vector<vector<mesh_size_t>> element_vector_t;
+		typedef std::vector<std::vector<precision_t>> coord_vector_t;
+		typedef std::vector<std::vector<mesh_size_t>> element_vector_t;
 	protected:
 		coord_vector_t node_matrix_;
 		element_vector_t element_matrix_;
@@ -75,7 +72,7 @@ class ImporterMsh : public Importer<P, I>{
 			return this->boundary_matrix_;
 		}
 
-		int get_node_matrix(ifstream& file_stream, std::string& line){
+		int get_node_matrix(std::ifstream& file_stream, std::string& line){
 			mesh_size_t node_num = 0;
 			mesh_size_t node_blocks = 0;
 			mesh_size_t nodes_in_block = 0;
@@ -83,7 +80,7 @@ class ImporterMsh : public Importer<P, I>{
 			precision_t help_val;
 
 
-			stringstream str_to_num;
+			std::stringstream str_to_num;
 			std::string data;
 			std::vector<std::string> line_data;
 
@@ -105,12 +102,12 @@ class ImporterMsh : public Importer<P, I>{
 				// skipping node tags
 				skiped_lines = 0;
 				while (skiped_lines < nodes_in_block){
-					file_stream.ignore(std::numeric_limits<streamsize>::max(), 
-							'\n');
+					file_stream.ignore(
+							std::numeric_limits<std::streamsize>::max(), '\n');
 					skiped_lines++;
 				}
 				for (mesh_size_t i = 0; i < nodes_in_block; i++){
-					vector<precision_t> point_data;
+					std::vector<precision_t> point_data;
 					std::getline(file_stream, line);
 					line_data = split(line, ' ');
 					for (int i = 0; i < 3; i++){
@@ -127,7 +124,7 @@ class ImporterMsh : public Importer<P, I>{
 			return EXIT_SUCCESS;
 		}
 
-		int get_elements(ifstream& file_stream, std::string& line){
+		int get_elements(std::ifstream& file_stream, std::string& line){
 			mesh_size_t elem_num = 0;
 			mesh_size_t elem_blocks = 0;
 			mesh_size_t elems_in_block = 0;
@@ -136,7 +133,7 @@ class ImporterMsh : public Importer<P, I>{
 			int elems_type = 0;
 			std::string data;
 			std::vector<std::string> line_data;
-			stringstream str_to_num;
+			std::stringstream str_to_num;
 
 			std::getline(file_stream, line);
 			assert(line == "$Elements");
@@ -158,7 +155,7 @@ class ImporterMsh : public Importer<P, I>{
 				elems_in_block = stol(line_data[3]);
 				elems_type = stoi(line_data[2]);
 				for (mesh_size_t i = 0; i < elems_in_block; i++){
-					vector<mesh_size_t> element_data;
+					std::vector<mesh_size_t> element_data;
 					std::getline(file_stream, line);
 					line_data = split(line, ' ');
 					if (elems_type == 1){
@@ -169,7 +166,7 @@ class ImporterMsh : public Importer<P, I>{
 						this->boundary_matrix_.push_back(element_data);
 					}
 					else if(elems_type == 2){
-						for (int i = 0; i < 3; i++){
+						for (int i = 1; i < 4; i++){
 							str_to_num << line_data[i];
 							str_to_num >> help_integer;
 							str_to_num.clear();
@@ -189,7 +186,7 @@ class ImporterMsh : public Importer<P, I>{
 			 * file
 			*/
 			std::string line;
-			ifstream file_stream;
+			std::ifstream file_stream;
 			
 			file_stream.open(this->file_path_);
 			std::getline(file_stream, line);
