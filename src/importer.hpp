@@ -161,7 +161,7 @@ class ImporterMsh : public Importer<P, I>{
 					if (elems_type == 1){
 						for (int i = 1; i < 3; i++){
 
-							element_data.push_back(stol(line_data[i]));
+							element_data.push_back(stol(line_data[i]) - 1);
 						} 
 						this->boundary_matrix_.push_back(element_data);
 					}
@@ -170,7 +170,7 @@ class ImporterMsh : public Importer<P, I>{
 							str_to_num << line_data[i];
 							str_to_num >> help_integer;
 							str_to_num.clear();
-							element_data.push_back(help_integer);
+							element_data.push_back(help_integer - 1);
 						} 
 						this->element_matrix_.push_back(element_data);
 					}
