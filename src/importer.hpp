@@ -45,6 +45,19 @@ class Importer{
 		
 		// Functionality
 		virtual int process_file() = 0;
+
+		mesh_size_t node_num(){
+			return node_matrix_.size();
+		}
+
+		mesh_size_t element_num(){
+			return element_matrix_.size();
+		}
+
+		mesh_size_t boundary_num(){
+			return boundary_matrix_.size();
+		}
+
 };
 
 template <typename P, typename I>
