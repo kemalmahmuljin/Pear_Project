@@ -14,6 +14,11 @@
 #include "concentration_model.hpp"
 #endif
 
+#ifndef PEAR_FUNCTORS_HPP
+#define PEAR_FUNCTORS_HPP
+#include "pear_functors.hpp"
+#endif
+
 // Element values configuation
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
@@ -93,7 +98,7 @@ int test2(){
 	return EXIT_SUCCESS;
 }
 
-int test_concentration_model(){
+int test_concentration_model_1(){
 	std::vector<double> interior_point{60, 5};
 	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear.msh");
 	mesh_importer.process_file();
@@ -105,11 +110,23 @@ int test_concentration_model(){
 	return EXIT_SUCCESS;
 }
 
+int test_concentration_model_2(){
+	std::vector<double> interior_point{60, 5};
+	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear.msh");
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+			interior_point);
+	model.generate_stiffness_matrix();
+	model.generate_f_vector();
+	model.solve_nonlinear_model();
+	return EXIT_SUCCESS;
+}
+
 int main(){
 	//Create ConcentrationModel
 	//Initialize Concentration model wjit the elements
 	//ConcentrationModel.create_non_linear()
 	//ConentrationModel.solve()
-	test_concentration_model();
+	test_concentration_model_1();
 	return EXIT_SUCCESS;
 }

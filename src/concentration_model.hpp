@@ -1,3 +1,5 @@
+#include <gsl/gsl_multiroots.h>
+
 #include <vector>
 #include <gsl/gsl_spmatrix.h>
 #include <gsl/gsl_vector.h>
@@ -12,7 +14,15 @@
 #include "element.hpp"
 #endif
 
+#ifndef PEAR_FUNCTORS_HPP
+#define PEAR_FUNCTORS_HPP
+#include "pear_functors.hpp"
+#endif
+
 namespace FEM_module{
+
+template<typename P, typename I>
+class NonLinearSystemFunctor;
 
 template<typename P, typename I>
 class ConcentrationModel{
@@ -31,6 +41,7 @@ class ConcentrationModel{
 		bound_list_t boundaries_;
 		gsl_vector* f_vector_;
 		gsl_vector* coefficients_;
+		gsl_vector* helper_;
 		gsl_spmatrix* stiffness_matrix_;
 	public:
 		/*
@@ -73,6 +84,7 @@ class ConcentrationModel{
 		, boundaries_(bound_list_t())
 		, coordinates_()
 		, f_vector_()
+		, helper_()
 		, coefficients_()
 		// once we have an estimate of the number of nonzero elements on the
 		// stiffness matrix it would be better to allocate using 
@@ -86,6 +98,7 @@ class ConcentrationModel{
 					(size_t)(2*number_nodes_));
 			gsl_spmatrix_set_zero(stiffness_matrix_);
 			f_vector_ = gsl_vector_calloc((size_t)(2*number_nodes_));
+			helper_ = gsl_vector_calloc((size_t)(2*number_nodes_));
 			coefficients_ = gsl_vector_calloc((size_t)(2*number_nodes_));
 			coordinates_ = importer.node_matrix();
 			for (auto elem : importer.element_matrix()){
@@ -103,6 +116,8 @@ class ConcentrationModel{
 		~ConcentrationModel(){
 			gsl_spmatrix_free(stiffness_matrix_);
 			gsl_vector_free(f_vector_);
+			gsl_vector_free(helper_);
+			gsl_vector_free(coefficients_);
 		}
 		// Access
 		const gsl_spmatrix* stiffness_matrix(){
@@ -117,8 +132,18 @@ class ConcentrationModel{
 			return coefficients_;
 		}
 
+		gsl_vector* helper(){
+			return helper_;
+		}
+
 		node_t number_nodes(){
 			return number_nodes_;
+		}
+		// Setters
+		
+		int set_coefficients(const gsl_vector* source){
+			gsl_vector_memcpy(coefficients_, source);
+			return EXIT_SUCCESS;
 		}
 
 		// Functionality
@@ -145,9 +170,11 @@ class ConcentrationModel{
 			gsl_spmatrix* stiff_mat_cc;
 			const precision_t tolerance = 1.0e-10;
 			const size_t max_iter = 100000;
-			const gsl_splinalg_itersolve_type* T = gsl_splinalg_itersolve_gmres;
+			const gsl_splinalg_itersolve_type* itersolve_type = 
+				gsl_splinalg_itersolve_gmres;
 			gsl_splinalg_itersolve *work = 
-				gsl_splinalg_itersolve_alloc(T, 2*number_nodes_, 0);
+				gsl_splinalg_itersolve_alloc(itersolve_type, 
+						2*number_nodes_, 0);
 			size_t iter = 0;
 			precision_t residual;
 			int status;
@@ -167,6 +194,46 @@ class ConcentrationModel{
 
 			gsl_splinalg_itersolve_free(work);
 			gsl_spmatrix_free(stiff_mat_cc);
+			return EXIT_SUCCESS;
+		}
+
+		int	get_integral_vector(gsl_vector* integral_vect, 
+				size_t cuad_points){
+			gsl_vector_set_all(integral_vect, 0.0);
+			for (auto elem : elements_){
+				elem.integrate_non_linear_term(coefficients_, coordinates_,
+						cuad_points, integral_vect);
+			}
+			return EXIT_SUCCESS;
+		}
+
+		int solve_nonlinear_model(){
+			int condition = 0;
+			const gsl_multiroot_fsolver_type* nonlinear_solver_type;
+			nonlinear_solver_type = gsl_multiroot_fsolver_dnewton;
+			gsl_multiroot_fsolver* nonlinear_solver = 
+				gsl_multiroot_fsolver_alloc(nonlinear_solver_type,
+						(size_t)(2*number_nodes_));
+			// We need the initial guess for the solver, for now I'm just
+			// passing 0
+			gsl_vector_set_all(coefficients_, 0);
+			
+			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
+				nls_functor(*this, 5);
+			
+			gsl_multiroot_function nls_function;
+			nls_function.f = &FEM_module::non_linear_function;
+			nls_function.n = 2*number_nodes_;
+			nls_function.params = &nls_functor;
+
+			gsl_multiroot_fsolver_set(nonlinear_solver, &nls_function, 
+					coefficients_);
+			do {
+				gsl_multiroot_fsolver_iterate(nonlinear_solver);
+				condition = gsl_multiroot_test_residual(
+						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-10);
+			} while(condition != GSL_SUCCESS);
+			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
 		}
 
