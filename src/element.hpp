@@ -155,10 +155,11 @@ class ElementTriangular : public Element<P, I>{
 					(size_t)this->nodes_[1] + NUM_NODES);
 			precision_t c_v_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2] + NUM_NODES);
-			precision_t res = 0;
-			res += K_MU*(1 + (c_v_1/K_MV + c_u_1)*p_1 +
-				(c_v_2/K_MV + c_u_2)*p_2 +
-				(c_v_3/K_MV + c_u_3)*p_3);
+			precision_t res = K_MU;
+			res += K_MU*(1 + p_1*c_v_1/K_MV + 
+						p_2*c_v_2/K_MV + 
+						p_3*c_v_3/K_MV);
+			res += p_1*c_u_1 + p_2*c_u_2 + p_3*c_u_3;
 			res += (c_u_1*c_v_1*pow(p_1, 2) + 
 				c_u_2*c_v_2*pow(p_2, 2) +
 				c_u_3*c_v_3*pow(p_3, 2))/K_MV;
@@ -204,7 +205,7 @@ class ElementTriangular : public Element<P, I>{
 			precision_t z1 = coordinates[this->nodes_[0]][1];
 			precision_t z2 = coordinates[this->nodes_[1]][1];
 			precision_t z3 = coordinates[this->nodes_[2]][1];
-			return (r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1);
+			return abs((r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1));
 		}
 
 		precision_t integrand_u(precision_t u, precision_t v, 
@@ -222,14 +223,17 @@ class ElementTriangular : public Element<P, I>{
 			precision_t r2 = coordinates[this->nodes_[1]][0];
 			precision_t r3 = coordinates[this->nodes_[2]][0];
 			if (node_idx == 1){
-				return (r1 + (r2 - r1))*u*r_u(coefficients, u, (1-u)*v)*
-					phi_1(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_u(
+						coefficients, u, (1 - u)*v)*phi_1(u, (1-u)*v)*
+					jacobian(coordinates)*(1 - u);
 			}else if (node_idx == 2){
-				return (r1 + (r2 - r1))*u*r_u(coefficients, u, (1-u)*v)*
-					phi_2(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_u(
+						coefficients, u, (1 - u)*v)*phi_2(u, (1-u)*v)*
+					jacobian(coordinates)*(1 - u);
 			}else if (node_idx == 3){
-				return (r1 + (r2 - r1))*u*r_u(coefficients, u, (1-u)*v)*
-					phi_2(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_u(
+						coefficients, u, (1 - u)*v)*phi_2(u, (1-u)*v)*
+					jacobian(coordinates)*(1 - u);
 			}
 		}
 		
@@ -248,14 +252,18 @@ class ElementTriangular : public Element<P, I>{
 			precision_t r2 = coordinates[this->nodes_[1]][0];
 			precision_t r3 = coordinates[this->nodes_[2]][0];
 			if (node_idx == 1){
-				return (r1 + (r2 - r1))*u*r_v(coefficients, u, (1-u)*v)*
-					phi_1(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_v(
+						coefficients, u, (1 - u)*v)*phi_1(u, (1-u)*v)*
+					jacobian(coordinates)*(1 - u);
 			}else if (node_idx == 2){
-				return (r1 + (r2 - r1))*u*r_v(coefficients, u, (1-u)*v)*
-					phi_2(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_v(
+						coefficients, u, (1 - u)*v)*phi_2(u, (1-u)*v)*
+					jacobian(coordinates)*
+					(1 - u);
 			}else if (node_idx == 3){
-				return (r1 + (r2 - r1))*u*r_v(coefficients, u, (1-u)*v)*
-					phi_2(u, (1-u)*v)*jacobian(coordinates);
+				return (r1 + (r2 - r1)*u + (r3 - r1)*(1 - u)*v)*r_v(
+						coefficients, u, (1 - u)*v)*phi_2(u, (1-u)*v)*
+					jacobian(coordinates)*(1 - u);
 			}
 		}
 

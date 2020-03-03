@@ -102,7 +102,7 @@ int test_quadrature(){
 	std::vector<int> nodes;
 	gsl_vector* coeff = gsl_vector_alloc(6);
 	gsl_vector* result = gsl_vector_alloc(6);
-	gsl_vector_set_all(coeff, 1.1);
+	gsl_vector_set_all(coeff, 1.0);
 	for (int i = 0; i < 3; i++){
 		nodes.push_back(i);
 		if (i == 0){
@@ -119,7 +119,7 @@ int test_quadrature(){
 	FEM_module::ElementTriangular<double, int> test_element(coords, nodes);
 	test_element.r_u(coeff, 0.5, 0.1);
 	test_element.r_v(coeff, 0.5, 0.1);
-	test_element.integrate_non_linear_term(coeff, coords, 5, result);
+	test_element.integrate_non_linear_term(coeff, coords, 15, result);
 
 	gsl_vector_free(coeff);
 	gsl_vector_free(result);
@@ -147,6 +147,11 @@ int test_concentration_model_2(){
 	model.generate_stiffness_matrix();
 	model.generate_f_vector();
 	model.solve_nonlinear_model();
+	std::cout<<mesh_importer<<std::endl;
+	std::cout<<"C_u_amb: "<<
+		FEM_module::ElementBoundary<double, int>::C_U_AMB<<std::endl;
+	std::cout<<"C_v_amb: "<<
+		FEM_module::ElementBoundary<double, int>::C_V_AMB<<std::endl;
 	std::cout<<model<<std::endl;
 	return EXIT_SUCCESS;
 }
@@ -156,6 +161,7 @@ int main(){
 	//Initialize Concentration model wjit the elements
 	//ConcentrationModel.create_non_linear()
 	//ConentrationModel.solve()
+	
 	test_concentration_model_2();
 	return EXIT_SUCCESS;
 }

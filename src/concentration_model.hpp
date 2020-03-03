@@ -222,8 +222,6 @@ class ConcentrationModel{
 				gsl_vector_set(coefficients_, i + number_nodes_, 
 						FEM_module::ElementBoundary<P, I>::C_V_AMB);
 			}
-			std::cout<<"U: "<<FEM_module::ElementBoundary<P, I>::C_U_AMB<<
-				" V: "<<FEM_module::ElementBoundary<P, I>::C_V_AMB<<std::endl;
 			//gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
@@ -238,7 +236,7 @@ class ConcentrationModel{
 					coefficients_);
 			int count = 1;
 			do {
-				std::cout<<"Itertion "<<count<<std::endl;
+				std::cout<<"Iteration "<<count<<std::endl;
 				std::cout<<FEM_module::vector_to_string(coefficients_)<<
 					std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
