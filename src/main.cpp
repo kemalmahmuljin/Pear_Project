@@ -97,6 +97,34 @@ int test2(){
 	}
 	return EXIT_SUCCESS;
 }
+int test_quadrature(){
+	std::vector<std::vector<double>> coords;
+	std::vector<int> nodes;
+	gsl_vector* coeff = gsl_vector_alloc(6);
+	gsl_vector* result = gsl_vector_alloc(6);
+	gsl_vector_set_all(coeff, 1.1);
+	for (int i = 0; i < 3; i++){
+		nodes.push_back(i);
+		if (i == 0){
+			coords.push_back(std::vector<double>({0.34, 1.2}));
+		}
+		else if (i == 1){
+			coords.push_back(std::vector<double>({1.70, 0.10}));
+		}
+		else{
+			coords.push_back(std::vector<double>({3.66, 2.50}));
+		}
+	}
+	FEM_module::ElementTriangular<double, int>::NUM_NODES = 3;
+	FEM_module::ElementTriangular<double, int> test_element(coords, nodes);
+	test_element.r_u(coeff, 0.5, 0.1);
+	test_element.r_v(coeff, 0.5, 0.1);
+	test_element.integrate_non_linear_term(coeff, coords, 5, result);
+
+	gsl_vector_free(coeff);
+	gsl_vector_free(result);
+	return EXIT_SUCCESS;
+};
 
 int test_concentration_model_1(){
 	std::vector<double> interior_point{60, 5};
@@ -119,6 +147,7 @@ int test_concentration_model_2(){
 	model.generate_stiffness_matrix();
 	model.generate_f_vector();
 	model.solve_nonlinear_model();
+	std::cout<<model<<std::endl;
 	return EXIT_SUCCESS;
 }
 
@@ -127,6 +156,6 @@ int main(){
 	//Initialize Concentration model wjit the elements
 	//ConcentrationModel.create_non_linear()
 	//ConentrationModel.solve()
-	test_concentration_model_1();
+	test_concentration_model_2();
 	return EXIT_SUCCESS;
 }

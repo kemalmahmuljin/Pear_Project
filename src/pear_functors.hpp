@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <limits>
+#include <string>
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -39,7 +40,7 @@ class NonLinearSystemFunctor{
 		int operator()(const gsl_vector* x, void* params,
 				gsl_vector* f){
 			model_.set_coefficients(x);
-			gsl_vector_set_all(f, 0);
+			gsl_vector_set_all(f, 0.0);
 			gsl_spblas_dgemv(CblasNoTrans, 1.0, model_.stiffness_matrix(), 
 					x, 0.0, f);
 			gsl_vector_add(f, model_.f_vector());
@@ -54,6 +55,16 @@ extern "C" int non_linear_function(const gsl_vector* x, void *param,
 	NonLinearSystemFunctor<double, int> *my_functor =
 		(NonLinearSystemFunctor<double, int> *)param;
 	return (*my_functor)(x, NULL, f);
+}
+
+std::string vector_to_string(const gsl_vector* vector_to_print){
+	std::stringstream str_stream;
+	str_stream<<"("<<vector_to_print->size<<")"<<"[";
+	for (size_t i = 0; i < vector_to_print->size; i++){
+		str_stream<<gsl_vector_get(vector_to_print, i)<<" ";
+	}
+	str_stream<<"]"<<std::endl;
+	return str_stream.str();
 }
 
 //template<typename P, typename I>

@@ -59,7 +59,7 @@ class ElementTriangular : public Element<P, I>{
 		static node_t NUM_NODES;
 		//static bool INITIALIZED;
 		
-		// Constructord
+		// Constructor
 		ElementTriangular(const std::vector<std::vector<precision_t>>& coordinates, 
 				const std::vector<node_t>& p_nodes)
 		{
@@ -104,11 +104,11 @@ class ElementTriangular : public Element<P, I>{
 		 *	False: Clockwise order.
 		*/
 		precision_t slope_1 = 
-			(coordinates[p_nodes[1]][2] - coordinates[p_nodes[0]][2])/
-			(coordinates[p_nodes[1]][1] - coordinates[p_nodes[0]][1]);
+			(coordinates[p_nodes[1]][1] - coordinates[p_nodes[0]][1])/
+			(coordinates[p_nodes[1]][0] - coordinates[p_nodes[0]][0]);
 		precision_t slope_2 = 
-			(coordinates[p_nodes[2]][2] - coordinates[p_nodes[1]][2])/
-			(coordinates[p_nodes[2]][1] - coordinates[p_nodes[1]][1]);
+			(coordinates[p_nodes[2]][1] - coordinates[p_nodes[1]][1])/
+			(coordinates[p_nodes[2]][0] - coordinates[p_nodes[1]][0]);
 		return (slope_1 < slope_2);
 		}
 		
@@ -150,11 +150,11 @@ class ElementTriangular : public Element<P, I>{
 			precision_t c_u_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2]);
 			precision_t c_v_1 = gsl_vector_get(coefficients, 
-					(size_t)this->nodes_[0 + NUM_NODES]);
+					(size_t)this->nodes_[0] + NUM_NODES);
 			precision_t c_v_2 = gsl_vector_get(coefficients, 
-					(size_t)this->nodes_[1 + NUM_NODES]);
+					(size_t)this->nodes_[1] + NUM_NODES);
 			precision_t c_v_3 = gsl_vector_get(coefficients, 
-					(size_t)this->nodes_[2 + NUM_NODES]);
+					(size_t)this->nodes_[2] + NUM_NODES);
 			precision_t res = 0;
 			res += K_MU*(1 + (c_v_1/K_MV + c_u_1)*p_1 +
 				(c_v_2/K_MV + c_u_2)*p_2 +
@@ -439,6 +439,9 @@ class ElementBoundary : public Element<P, I>{
 			/*
 			Updates the global stiffness matrix
 			*/
+			if (axis_flag){
+				return EXIT_SUCCESS;
+			}
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
 			precision_t r1 = coordinates[n_1][0];
@@ -478,6 +481,9 @@ class ElementBoundary : public Element<P, I>{
 		int update_vector_f(
 				const std::vector<std::vector<precision_t>>& coordinates, 
 				global_vect_t& vector_f){
+			if (axis_flag){
+				return EXIT_SUCCESS;
+			}
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
 			precision_t r1 = coordinates[n_1][0];

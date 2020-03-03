@@ -228,11 +228,17 @@ class ConcentrationModel{
 
 			gsl_multiroot_fsolver_set(nonlinear_solver, &nls_function, 
 					coefficients_);
+			int count = 1;
 			do {
+				std::cout<<FEM_module::vector_to_string(coefficients_)<<
+					std::endl;
+				std::cout<<"Itertion "<<count<<std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
-						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-10);
+						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-5);
+				count++;
 			} while(condition != GSL_SUCCESS);
+			
 			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
 		}
@@ -269,10 +275,7 @@ std::ostream& operator<<(std::ostream& os, const gsl_spmatrix* sp_mat){
 }
 
 std::ostream& operator<<(std::ostream& os, const gsl_vector* vect){
-	for (size_t i = 0; i < vect->size; i++){
-		os<<gsl_vector_get(vect, i)<<" ";
-	}
-	os<<std::endl;
+	os<<FEM_module::vector_to_string(vect)<<std::endl;
     return os;
 }
 

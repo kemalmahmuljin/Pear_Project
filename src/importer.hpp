@@ -123,7 +123,7 @@ class ImporterMsh : public Importer<P, I>{
 					std::vector<precision_t> point_data;
 					std::getline(file_stream, line);
 					line_data = split(line, ' ');
-					for (int i = 0; i < 3; i++){
+					for (int i = 0; i < 2; i++){
 						str_to_num << line_data[i];
 						str_to_num >> help_val;
 						str_to_num.clear();
