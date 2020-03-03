@@ -216,10 +216,18 @@ class ConcentrationModel{
 						(size_t)(2*number_nodes_));
 			// We need the initial guess for the solver, for now I'm just
 			// passing 0
-			gsl_vector_set_all(coefficients_, 0);
+			for (size_t i = 0; i < number_nodes_; i++){
+				gsl_vector_set(coefficients_, i, 
+						FEM_module::ElementBoundary<P, I>::C_U_AMB);
+				gsl_vector_set(coefficients_, i + number_nodes_, 
+						FEM_module::ElementBoundary<P, I>::C_V_AMB);
+			}
+			std::cout<<"U: "<<FEM_module::ElementBoundary<P, I>::C_U_AMB<<
+				" V: "<<FEM_module::ElementBoundary<P, I>::C_V_AMB<<std::endl;
+			//gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-				nls_functor(*this, 5);
+				nls_functor(*this, 15);
 			
 			gsl_multiroot_function nls_function;
 			nls_function.f = &FEM_module::non_linear_function;
@@ -230,9 +238,9 @@ class ConcentrationModel{
 					coefficients_);
 			int count = 1;
 			do {
+				std::cout<<"Itertion "<<count<<std::endl;
 				std::cout<<FEM_module::vector_to_string(coefficients_)<<
 					std::endl;
-				std::cout<<"Itertion "<<count<<std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
 						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-5);
@@ -281,10 +289,10 @@ std::ostream& operator<<(std::ostream& os, const gsl_vector* vect){
 
 template <typename P, typename I>
 std::ostream& operator<<(std::ostream& os, ConcentrationModel<P, I>& model){
-    os<<"Stiffness Matrix"<<std::endl;
-	os<<model.stiffness_matrix()<<std::endl;
-    os<<"Vector f"<<std::endl;
-	os<<model.f_vector()<<std::endl;
+    //os<<"Stiffness Matrix"<<std::endl;
+	//os<<model.stiffness_matrix()<<std::endl;
+    //os<<"Vector f"<<std::endl;
+	//os<<model.f_vector()<<std::endl;
     os<<"Concentration Coefficients"<<std::endl;
 	os<<model.coefficients()<<std::endl;
     return os;

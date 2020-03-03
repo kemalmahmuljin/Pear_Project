@@ -207,7 +207,7 @@ class ElementTriangular : public Element<P, I>{
 			return (r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1);
 		}
 
-		int integrand_u(precision_t u, precision_t v, 
+		precision_t integrand_u(precision_t u, precision_t v, 
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx){
@@ -231,7 +231,6 @@ class ElementTriangular : public Element<P, I>{
 				return (r1 + (r2 - r1))*u*r_u(coefficients, u, (1-u)*v)*
 					phi_2(u, (1-u)*v)*jacobian(coordinates);
 			}
-			return EXIT_SUCCESS;
 		}
 		
 		precision_t integrand_v(precision_t u, precision_t v, 
@@ -258,7 +257,6 @@ class ElementTriangular : public Element<P, I>{
 				return (r1 + (r2 - r1))*u*r_v(coefficients, u, (1-u)*v)*
 					phi_2(u, (1-u)*v)*jacobian(coordinates);
 			}
-			return EXIT_SUCCESS;
 		}
 
 		int integrate_non_linear_term(const gsl_vector* coefficients,
@@ -273,6 +271,8 @@ class ElementTriangular : public Element<P, I>{
 			precision_t result_u;
 			precision_t result_v;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
+				result_u = 0;
+				result_v = 0;
 				for (size_t i = 0; i < points; i++){
 					gsl_integration_glfixed_point(0, 1, i, &u, &w_i, table);
 					for (size_t j = 0; j < points; j++){
@@ -448,7 +448,7 @@ class ElementBoundary : public Element<P, I>{
 			precision_t r2 = coordinates[n_2][0];
 			precision_t z1 = coordinates[n_1][1];
 			precision_t z2 = coordinates[n_2][1];
-			precision_t s11 = RHO_U*length(coordinates)*(r2/4  + r1/12);	
+			precision_t s11 = RHO_U*length(coordinates)*(r2/4  + r1/12);
 			precision_t s12 = RHO_U*length(coordinates)*(r1+r2)/12;
 			precision_t s22 = RHO_U*length(coordinates)*(r1/4  + r2/12);
 
@@ -488,16 +488,16 @@ class ElementBoundary : public Element<P, I>{
 			node_t n_2 = this->nodes_[1];
 			precision_t r1 = coordinates[n_1][0];
 			precision_t r2 = coordinates[n_2][0];
-			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) + 
+			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) - 
 					RHO_U*length(coordinates)*C_U_AMB*(r1/6 + r2/3));
-			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) + 
+			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) - 
 					RHO_U*length(coordinates)*C_U_AMB*(r2/6 + r1/3));
 
 			n_1 += NUM_NODES;
 			n_2 += NUM_NODES;
-			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) + 
+			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) - 
 					RHO_V*length(coordinates)*C_V_AMB*(r1/6 + r2/3));
-			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) + 
+			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) - 
 					RHO_V*length(coordinates)*C_V_AMB*(r2/6 + r1/3));
 			return EXIT_SUCCESS;
 		}
