@@ -37,7 +37,8 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementTriangular<P, I>::RESP_Q = 0.97;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::MAX_FERM_CO2 = 1.61e-4;
+	FEM_module::ElementTriangular<P, I>::MAX_FERM_CO2 = 1.61e-4*exp(
+			(56700/8.32)*(1/297 - 1/293));
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::K_MFU = 0.1149;
@@ -49,13 +50,14 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementTriangular<P, I>::K_MV = 27.2438;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::V_MU = 2.39e-4;
+	FEM_module::ElementTriangular<P, I>::V_MU = 2.39e-4*exp(
+			(80200/8.32)*(1/297 - 1/293));
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
 	FEM_module::ElementTriangular<P, I>::NUM_ELM = 0;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementTriangular<P, I>::NUM_NODES = 42;
+	FEM_module::ElementTriangular<P, I>::NUM_NODES = 142;
 
 // boundary values configuration
 template <typename P, typename I>
@@ -63,7 +65,7 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementBoundary<P, I>::C_U_AMB = 101300*0.208/(8.32*293);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::C_V_AMB = 0;
+	FEM_module::ElementBoundary<P, I>::C_V_AMB = 101300*0.0/(8.32*293);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementBoundary<P, I>::RHO_U = 7e-7;
@@ -72,7 +74,7 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementBoundary<P, I>::RHO_V = 7.5e-7;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementBoundary<P, I>::NUM_NODES = 42;
+	FEM_module::ElementBoundary<P, I>::NUM_NODES = 142;
 
 int test2(){
 	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
@@ -140,12 +142,10 @@ int test_concentration_model_1(){
 
 int test_concentration_model_2(){
 	std::vector<double> interior_point{60, 5};
-	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear.msh");
+	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear_3.msh");
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);
-	model.generate_stiffness_matrix();
-	model.generate_f_vector();
 	model.solve_nonlinear_model();
 	std::cout<<mesh_importer<<std::endl;
 	std::cout<<"C_u_amb: "<<

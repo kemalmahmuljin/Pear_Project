@@ -376,6 +376,72 @@ class ElementTriangular : public Element<P, I>{
 
 			return EXIT_SUCCESS;
 		}
+
+		int update_stiffness_with_linearized_integral(
+				const std::vector<std::vector<precision_t>>& coordinates,
+				stiff_mat_t& global_stiffness){
+			/*
+			Updates the global stiffness matrix
+			*/
+			node_t n_1 = this->nodes_[0];
+			node_t n_2 = this->nodes_[1];
+			node_t n_3 = this->nodes_[2];
+			precision_t r1 = coordinates[n_1][0];
+			precision_t r2 = coordinates[n_2][0];
+			precision_t r3 = coordinates[n_3][0];
+			precision_t z1 = coordinates[n_1][1];
+			precision_t z2 = coordinates[n_2][1];
+			precision_t z3 = coordinates[n_3][1];
+			precision_t k = V_MU;
+			k = k*jacobian(coordinates);
+			precision_t s1 = (r1*2/3 - r2/24 - r3*7/24)*k;
+			precision_t s2 = (r1*5/24 - r2/12 + r3/24)*k;
+			precision_t s3 = (r1*3/24 - r2/24 + r3*1/12)*k;
+			
+			gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_1) + s1);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_2) + s1);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_3) + s1);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_1) + s2);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_2) + s2);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_3) + s2);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_1) + s3);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_2) + s3);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_3) + s3);
+			
+			n_1 += NUM_NODES;
+			n_2 += NUM_NODES;			
+			n_3 += NUM_NODES;
+			
+			gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_1)-RESP_Q*s1);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_2)-RESP_Q*s1);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_3)-RESP_Q*s1);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_1)-RESP_Q*s2);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_2)-RESP_Q*s2);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_2, n_3)-RESP_Q*s2);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_1, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_1)-RESP_Q*s3);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_2, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_2)-RESP_Q*s3);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_3, 
+					gsl_spmatrix_get(&global_stiffness, n_3, n_3)-RESP_Q*s3);
+			return EXIT_SUCCESS;
+			
+		}
 };
 
 template <typename P, typename I>
@@ -407,8 +473,9 @@ class ElementBoundary : public Element<P, I>{
 					this->nodes_.push_back(p_nodes[1 - i]);
 				}
 			}
-			axis_flag = (coordinates[this->nodes_[0]][0] -
-				coordinates[this->nodes_[1]][0]) < 1e-2;
+			axis_flag = ((coordinates[this->nodes_[0]][0] -
+				coordinates[this->nodes_[1]][0]) < 1e-2) && 
+				coordinates[this->nodes_[0]][0] < 1e-2;
 		
 		}
 

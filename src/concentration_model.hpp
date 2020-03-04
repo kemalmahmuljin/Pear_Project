@@ -158,6 +158,13 @@ class ConcentrationModel{
 			}
 			return EXIT_SUCCESS;
 		}
+
+		int add_linear_approx_to_stiffness(){
+			for (auto elem : elements_){
+				elem.update_stiffness_with_linearized_integral(coordinates_, 
+						*stiffness_matrix_);
+			}
+		}
 		
 		int generate_f_vector(){
 			for (auto bound : boundaries_){
@@ -185,10 +192,10 @@ class ConcentrationModel{
 			do{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, f_vector_,
 						tolerance, coefficients_, work);
-				std::cout<<coefficients()<<std::endl;
+			//	std::cout<<coefficients()<<std::endl;
 				residual = gsl_splinalg_itersolve_normr(work);
-				if (status == GSL_SUCCESS)
-					fprintf(stderr, "Converged\n");
+			//	if (status == GSL_SUCCESS)
+			//		fprintf(stderr, "Converged\n");
 			}
 			while (status == GSL_CONTINUE && ++iter < max_iter);
 
@@ -214,18 +221,25 @@ class ConcentrationModel{
 			gsl_multiroot_fsolver* nonlinear_solver = 
 				gsl_multiroot_fsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
+			
+			generate_stiffness_matrix();
+			generate_f_vector();
 			// We need the initial guess for the solver, for now I'm just
 			// passing 0
-			for (size_t i = 0; i < number_nodes_; i++){
-				gsl_vector_set(coefficients_, i, 
-						FEM_module::ElementBoundary<P, I>::C_U_AMB);
-				gsl_vector_set(coefficients_, i + number_nodes_, 
-						FEM_module::ElementBoundary<P, I>::C_V_AMB);
-			}
+			//for (size_t i = 0; i < number_nodes_; i++){
+			//	gsl_vector_set(coefficients_, i, 
+			//			FEM_module::ElementBoundary<P, I>::C_U_AMB/2);
+			//	gsl_vector_set(coefficients_, i + number_nodes_, 
+			//			FEM_module::ElementBoundary<P, I>::C_V_AMB + 3);
+			//}
+			add_linear_approx_to_stiffness();
+			solve_linear_model();
+			gsl_spmatrix_set_zero(stiffness_matrix_);
+			generate_stiffness_matrix();
 			//gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-				nls_functor(*this, 15);
+				nls_functor(*this, 20);
 			
 			gsl_multiroot_function nls_function;
 			nls_function.f = &FEM_module::non_linear_function;
@@ -236,9 +250,9 @@ class ConcentrationModel{
 					coefficients_);
 			int count = 1;
 			do {
-				std::cout<<"Iteration "<<count<<std::endl;
-				std::cout<<FEM_module::vector_to_string(coefficients_)<<
-					std::endl;
+				//std::cout<<"Iteration "<<count<<std::endl;
+				//std::cout<<FEM_module::vector_to_string(coefficients_)<<
+				//	std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
 						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-5);
