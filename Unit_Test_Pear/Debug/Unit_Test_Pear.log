@@ -1,0 +1,3 @@
+﻿  test.cpp
+C:\Users\user\Documents\GitHub\Pear_Project\Unit_Test_Pear\test.cpp(9,21): warning C4018: '<': signed/unsigned mismatch
+  Unit_Test_Pear.vcxproj -> C:\Users\user\Documents\GitHub\Pear_Project\Unit_Test_Pear\Debug\Unit_Test_Pear.exe
