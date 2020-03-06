@@ -57,7 +57,13 @@ typename FEM_module::Element<P, I>::node_t
 	FEM_module::ElementTriangular<P, I>::NUM_ELM = 0;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementTriangular<P, I>::NUM_NODES = 142;
+	FEM_module::ElementTriangular<P, I>::NUM_NODES = 19;
+template <typename P, typename I>
+typename FEM_module::Element<P, I>::precision_t 
+	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*0.208/(8.32*293);
+template <typename P, typename I>
+typename FEM_module::Element<P, I>::precision_t 
+	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*0.0/(8.32*293);
 
 // boundary values configuration
 template <typename P, typename I>
@@ -74,7 +80,7 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementBoundary<P, I>::RHO_V = 7.5e-7;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementBoundary<P, I>::NUM_NODES = 142;
+	FEM_module::ElementBoundary<P, I>::NUM_NODES = 19;
 
 int test2(){
 	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
@@ -142,17 +148,14 @@ int test_concentration_model_1(){
 
 int test_concentration_model_2(){
 	std::vector<double> interior_point{60, 5};
-	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear_3.msh");
+	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/circle.msh");
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);
+	model.write_elements_to_file("elements");
+	model.write_boundaries_to_file("boundaries");
+	model.write_coordinates_to_file("coords");
 	model.solve_nonlinear_model();
-	std::cout<<mesh_importer<<std::endl;
-	std::cout<<"C_u_amb: "<<
-		FEM_module::ElementBoundary<double, int>::C_U_AMB<<std::endl;
-	std::cout<<"C_v_amb: "<<
-		FEM_module::ElementBoundary<double, int>::C_V_AMB<<std::endl;
-	std::cout<<model<<std::endl;
 	return EXIT_SUCCESS;
 }
 

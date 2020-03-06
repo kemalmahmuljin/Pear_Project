@@ -44,7 +44,7 @@ class NonLinearSystemFunctor{
 			gsl_spblas_dgemv(CblasNoTrans, 1.0, model_.stiffness_matrix(), 
 					x, 0.0, f);
 			gsl_vector_add(f, model_.f_vector());
-			model_.get_integral_vector(model_.helper(), quad_points_);
+			model_.get_integral_vector(quad_points_);
 			gsl_vector_add(f, model_.helper());
 			return EXIT_SUCCESS;
 		}
@@ -67,66 +67,31 @@ std::string vector_to_string(const gsl_vector* vector_to_print){
 	return str_stream.str();
 }
 
-//template<typename P, typename I>
-//class FirstIntegrandUFunctor{
-//	public:
-//		typedef P precision_t;
-//		typedef I node_t;
-//	private:
-//		FEM_module::ElementTriangular<precision_t, node_t>& element_;
-//		precision_t u_;
-//		const gsl_vector* coefficients_;
-//		const std::vector<std::vector<precision_t>>& coordinates_;
-//		node_t node_idx_;
-//	public:
-//		IntegrandUFunctor(FEM_module::ElementTriangular<precision_t, 
-//				node_t>& element, const gsl_vector* coefficients,
-//				const std::vector<std::vector<precision_t>>& coordinates,
-//				node_t node_idx)
-//		: element_(element)
-//		, u_()
-//		, coefficients_(coefficients)
-//		, coordinates_(coordinates)
-//		, node_idx_(node_idx)
-//		{}
-//		
-//		int set_u(precision_t u){
-//			u_ = u;
-//		}
-//
-//		precision_t operator()(double x, void* params){
-//			return *element_.integrand_u(u_, x, coefficients_, coordinates_, 
-//					node_idx_);
-//		}
-//};
-//
-//template<typename P, typename I>
-//class SecondIntegrandUFunctor{
-//	public:
-//		typedef P precision_t;
-//		typedef I node_t;
-//	private:
-//		FirstIntegrandUFunctor<precision_t, node_t> first_integrand_functor_;
-//		size_t points_;
-//	public:
-//		IntegrandUFunctor(FEM_module::ElementTriangular<precision_t, 
-//				node_t>& element, const gsl_vector* coefficients,
-//				const std::vector<std::vector<precision_t>>& coordinates,
-//				node_t node_idx, size_t points)
-//		: first_integrand_functor(element, coefficients, coordinates, 
-//				node_idx)
-//		, points_(points)
-//		{}
-//
-//		precision_t operator()(double x, void* params){
-//			precision_t u;
-//			precision_t w;
-//			gsl_integration_glfixed_table* table = 
-//				gsl_integration_glfixed_table_alloc(n);
-//			gsl
-//			first_integrand_functor_.set_u(  ...  )
-//			return gsl_integration_glfixed(first_integrand_functor_,
-//					0, 1, table);
-//		}
-//};
+std::string matrix_to_string(const gsl_spmatrix* matrix_to_print){
+	std::stringstream str_stream;
+	str_stream<<"("<<matrix_to_print->size1<<", "<<matrix_to_print->size2<<
+		")"<<std::endl;
+	for (size_t i = 0; i < matrix_to_print->size1; i++){
+		for (size_t j = 0; j < matrix_to_print->size2; j++){
+			str_stream<<gsl_spmatrix_get(matrix_to_print, i, j)<<" ";
+		}
+		str_stream<<std::endl;
+	} 
+	str_stream<<std::endl;
+	return str_stream.str();
+}
+
+int write_matrix_to_file(const gsl_spmatrix* mtrx, std::string filename){
+	std::ofstream myfile;
+	myfile.open(filename, std::ios::out);
+	myfile<<matrix_to_string(mtrx);
+	myfile.close();	
+}
+
+int write_vector_to_file(const gsl_vector* vect, std::string filename){
+	std::ofstream myfile;
+	myfile.open(filename, std::ios::out);
+	myfile<<vector_to_string(vect);
+	myfile.close();	
+}
 }

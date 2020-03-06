@@ -44,37 +44,6 @@ class ConcentrationModel{
 		gsl_vector* helper_;
 		gsl_spmatrix* stiffness_matrix_;
 	public:
-		/*
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 * Very important question: can I free the importer after using it, I've
-		 * try that before, and when the importer runs out of scope the default
-		 * destructor gets called and i get an error, but I don't ant to wait
-		 * until the importer gets out of scope, I can free the memory before.
-		 * Also, if I pass the coordinates as a reference from the importer to
-		 * the ConcentrationModel, and then destroy the Importer, it's the
-		 * matrix still reachable from the ConcentrationModel or would I end up
-		 * with a dangling pointer, should I pass the matrices as copies?.
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		 *
-		*/
-		// Constructor
 		ConcentrationModel(Importer<precision_t, node_t>& importer, 
 				std::vector<precision_t>& interior_point)
 		: number_elements_()
@@ -96,7 +65,6 @@ class ConcentrationModel{
 			number_boundaries_ = importer.boundary_num();
 			stiffness_matrix_ = gsl_spmatrix_alloc((size_t)(2*number_nodes_), 
 					(size_t)(2*number_nodes_));
-			gsl_spmatrix_set_zero(stiffness_matrix_);
 			f_vector_ = gsl_vector_calloc((size_t)(2*number_nodes_));
 			helper_ = gsl_vector_calloc((size_t)(2*number_nodes_));
 			coefficients_ = gsl_vector_calloc((size_t)(2*number_nodes_));
@@ -148,6 +116,7 @@ class ConcentrationModel{
 
 		// Functionality
 		int generate_stiffness_matrix(){
+			gsl_spmatrix_set_zero(stiffness_matrix_);
 			for (auto elem : elements_){
 				elem.update_stiffness_matrix(coordinates_, 
 						*stiffness_matrix_);
@@ -167,15 +136,23 @@ class ConcentrationModel{
 		}
 		
 		int generate_f_vector(){
+			gsl_vector_set_zero(f_vector_);
 			for (auto bound : boundaries_){
 				bound.update_vector_f(coordinates_, *f_vector_);
 			}
 			return EXIT_SUCCESS;
 		}
+		
+		int add_linear_approx_to_f_vector(){
+			for (auto elem : elements_){
+				elem.update_f_vector_with_linearized_integral(coordinates_, 
+						*f_vector_);
+			}
+		}
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-10;
+			const precision_t tolerance = 1.0e-14;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -190,12 +167,12 @@ class ConcentrationModel{
 			
 			stiff_mat_cc = gsl_spmatrix_ccs(stiffness_matrix_);
 			do{
-				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, f_vector_,
-						tolerance, coefficients_, work);
+				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
+						f_vector_, tolerance, coefficients_, work);
 			//	std::cout<<coefficients()<<std::endl;
 				residual = gsl_splinalg_itersolve_normr(work);
-			//	if (status == GSL_SUCCESS)
-			//		fprintf(stderr, "Converged\n");
+				if (status == GSL_SUCCESS)
+					fprintf(stderr, "Converged\n");
 			}
 			while (status == GSL_CONTINUE && ++iter < max_iter);
 
@@ -204,12 +181,11 @@ class ConcentrationModel{
 			return EXIT_SUCCESS;
 		}
 
-		int	get_integral_vector(gsl_vector* integral_vect, 
-				size_t cuad_points){
-			gsl_vector_set_all(integral_vect, 0.0);
+		int	get_integral_vector(size_t cuad_points){
+			gsl_vector_set_all(helper_, 0.0);
 			for (auto elem : elements_){
-				elem.integrate_non_linear_term(coefficients_, coordinates_,
-						cuad_points, integral_vect);
+				elem.integrate_non_linear_term_2(coefficients_, coordinates_,
+						cuad_points, helper_);
 			}
 			return EXIT_SUCCESS;
 		}
@@ -224,18 +200,17 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			// We need the initial guess for the solver, for now I'm just
-			// passing 0
-			//for (size_t i = 0; i < number_nodes_; i++){
-			//	gsl_vector_set(coefficients_, i, 
-			//			FEM_module::ElementBoundary<P, I>::C_U_AMB/2);
-			//	gsl_vector_set(coefficients_, i + number_nodes_, 
-			//			FEM_module::ElementBoundary<P, I>::C_V_AMB + 3);
-			//}
+			//add_linear_approx_to_f_vector();
+			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
 			solve_linear_model();
-			gsl_spmatrix_set_zero(stiffness_matrix_);
+			
+			FEM_module::write_vector_to_file(f_vector_, "f_vector");
+			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
+			
 			generate_stiffness_matrix();
+			generate_f_vector();
 			//gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
@@ -255,7 +230,7 @@ class ConcentrationModel{
 				//	std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
-						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-5);
+						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-8);
 				count++;
 			} while(condition != GSL_SUCCESS);
 			
@@ -263,25 +238,41 @@ class ConcentrationModel{
 			return EXIT_SUCCESS;
 		}
 
-	// Contructor{
-	// Create an Importer
-	// Read the mesh
-	// Initialize model using the Importer obeject
-	// Create global stiffness matrix
-	// Vector f
-	// function handle for the non-linear part( taken as input)
-	// }
-	//
-	// Functionality
-	// 1_ compute initial guess{
-	// creates a matrix 
-	// create linear system
-	// solve it
-	// }
-	//
-	// 2_ solve(){
-	// solve the system using guess and the non linear solver
-	// }
+
+		// Output
+		int write_coordinates_to_file(std::string filename){
+			std::ofstream myfile;
+			myfile.open(filename, std::ios::out);
+			myfile<<"("<<coordinates_.size()<<", "<<coordinates_[0].size()<<
+				")"<<std::endl;
+			for (node_t i = 0; i < coordinates_.size(); i++){
+				for (node_t j = 0; j < coordinates_[0].size(); j++){
+					myfile<<coordinates_[i][j]<<" ";
+				}
+				myfile<<std::endl;
+			}
+		}
+
+		int write_elements_to_file(std::string filename){
+			std::ofstream myfile;
+			myfile.open(filename, std::ios::out);
+			for (auto elem : elements_){
+				for (int i = 0; i < 3; i++){
+					myfile<<elem.nodes()[i]<<" ";
+				}
+				myfile<<std::endl;
+			}
+		}
+
+		int write_boundaries_to_file(std::string filename){
+			std::ofstream myfile;
+			myfile.open(filename, std::ios::out);
+			for (auto bound : boundaries_){
+				for (int i = 0; i < 2; i++){
+					myfile<<bound.nodes()[i]<<" ";
+				}
+				myfile<<std::endl;
+			}}
 };
 
 std::ostream& operator<<(std::ostream& os, const gsl_spmatrix* sp_mat){

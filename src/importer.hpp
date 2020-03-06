@@ -247,6 +247,7 @@ std::ostream& operator<<(std::ostream& os, ImporterMsh<P, I>& importer) {
     }
     os<<std::endl<<"Boundary Num - node 1 - node 2"<<std::endl;
 	count = 1;
+	int cond = 0;
     for (auto elem : importer.boundary_matrix()) {
 		os<<"Boundary "<<count<<" - "<<elem[0]<<" - "<<elem[1]<<std::endl;
 		count++;
