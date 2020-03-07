@@ -152,7 +152,7 @@ class ConcentrationModel{
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-14;
+			const precision_t tolerance = 1.0e-6;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -200,18 +200,18 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			//add_linear_approx_to_f_vector();
+			add_linear_approx_to_f_vector();
 			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
+			FEM_module::write_vector_to_file(f_vector_, "f_vector");
 			solve_linear_model();
 			
-			FEM_module::write_vector_to_file(f_vector_, "f_vector");
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			//gsl_vector_set_all(coefficients_, 0);
+			gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 20);
@@ -233,6 +233,7 @@ class ConcentrationModel{
 						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-8);
 				count++;
 			} while(condition != GSL_SUCCESS);
+			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
 			
 			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
@@ -271,7 +272,8 @@ class ConcentrationModel{
 				for (int i = 0; i < 2; i++){
 					myfile<<bound.nodes()[i]<<" ";
 				}
-				myfile<<std::endl;
+				myfile<<(int)bound.axis_flag;
+				myfile<<" "<<std::endl;
 			}}
 };
 

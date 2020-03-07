@@ -127,7 +127,7 @@ class ImporterMsh : public Importer<P, I>{
 						str_to_num << line_data[i];
 						str_to_num >> help_val;
 						str_to_num.clear();
-						point_data.push_back(help_val);
+						point_data.push_back(help_val/1000.0);
 					} 
 					this->node_matrix_.push_back(point_data);
 				}
