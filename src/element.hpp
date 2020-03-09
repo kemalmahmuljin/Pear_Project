@@ -477,65 +477,65 @@ class ElementTriangular : public Element<P, I>{
 					gsl_spmatrix_get(&global_stiffness, n_3, n_3)
 					- RESP_Q*s33);
 
-			//k = -MAX_FERM_CO2*K_MFU;
-			//k = k*jacobian(coordinates);
-			//s11 = (3*r1 + r2 + r3)*k/(
-			//		60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
-			//		60*pow(K_MFU, 2));
-			//s12 = (2*r1 + 2*r2 + r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
-			//s13 = (2*r1 + r2 + 2*r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
+			k = -MAX_FERM_CO2*K_MFU;
+			k = k*jacobian(coordinates);
+			s11 = (3*r1 + r2 + r3)*k/(
+					60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
+					60*pow(K_MFU, 2));
+			s12 = (2*r1 + 2*r2 + r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
+			s13 = (2*r1 + r2 + 2*r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
 
-			//s21 = (2*r1 + 2*r2 + r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
-			//s22 = (r1 + 3*r2 + r3)*k/(
-			//		60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
-			//		60*pow(K_MFU, 2));
-			//s23 = (r1 + 2*r2 + 2*r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
-			//
-			//s31 = (2*r1 + r2 + 2*r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
-			//s32 = (r1 + 2*r2 + 2*r3)*k/(
-			//		120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
-			//		120*pow(K_MFU, 2));
-			//s33 = (r1 + r2 + 3*r3)*k/(
-			//		60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
-			//		60*pow(K_MFU, 2));
+			s21 = (2*r1 + 2*r2 + r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
+			s22 = (r1 + 3*r2 + r3)*k/(
+					60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
+					60*pow(K_MFU, 2));
+			s23 = (r1 + 2*r2 + 2*r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
+			
+			s31 = (2*r1 + r2 + 2*r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
+			s32 = (r1 + 2*r2 + 2*r3)*k/(
+					120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2));
+			s33 = (r1 + r2 + 3*r3)*k/(
+					60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
+					60*pow(K_MFU, 2));
 
-			//gsl_spmatrix_set(&global_stiffness, n_1, n_1 - NUM_NODES, 
-			//		gsl_spmatrix_get(&global_stiffness, n_1, n_1 - NUM_NODES)
-			//		- s11);
-			//gsl_spmatrix_set(&global_stiffness, n_1, n_2 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_1, n_2 - NUM_NODES)
-			//		- s12);
-			//gsl_spmatrix_set(&global_stiffness, n_1, n_3 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_1, n_3 - NUM_NODES)
-			//		- s13);
-			//gsl_spmatrix_set(&global_stiffness, n_2, n_1 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_2, n_1 - NUM_NODES)
-			//		- s21);
-			//gsl_spmatrix_set(&global_stiffness, n_2, n_2 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_2, n_2 - NUM_NODES)
-			//		- s22);
-			//gsl_spmatrix_set(&global_stiffness, n_2, n_3 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_2, n_3 - NUM_NODES)
-			//		- s23);
-			//gsl_spmatrix_set(&global_stiffness, n_3, n_1 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_3, n_1 - NUM_NODES)
-			//		- s31);
-			//gsl_spmatrix_set(&global_stiffness, n_3, n_2 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_3, n_2 - NUM_NODES)
-			//		- s32);
-			//gsl_spmatrix_set(&global_stiffness, n_3, n_3 - NUM_NODES,
-			//		gsl_spmatrix_get(&global_stiffness, n_3, n_3 - NUM_NODES)
-			//		- s33);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_1 - NUM_NODES, 
+					gsl_spmatrix_get(&global_stiffness, n_1, n_1 - NUM_NODES)
+					- s11);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_2 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_1, n_2 - NUM_NODES)
+					- s12);
+			gsl_spmatrix_set(&global_stiffness, n_1, n_3 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_1, n_3 - NUM_NODES)
+					- s13);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_1 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_2, n_1 - NUM_NODES)
+					- s21);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_2 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_2, n_2 - NUM_NODES)
+					- s22);
+			gsl_spmatrix_set(&global_stiffness, n_2, n_3 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_2, n_3 - NUM_NODES)
+					- s23);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_1 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_3, n_1 - NUM_NODES)
+					- s31);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_2 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_3, n_2 - NUM_NODES)
+					- s32);
+			gsl_spmatrix_set(&global_stiffness, n_3, n_3 - NUM_NODES,
+					gsl_spmatrix_get(&global_stiffness, n_3, n_3 - NUM_NODES)
+					- s33);
 			return EXIT_SUCCESS;	
 		}
 		
@@ -553,6 +553,17 @@ class ElementTriangular : public Element<P, I>{
 			precision_t val_1 = k+(2*r1 + r2 + r3);
 			precision_t val_2 = k*(r1 + 2*r2 + r3);
 			precision_t val_3 = k*(r1 + r2 + 2*r3);
+			
+			precision_t k_2 = -V_MU/K_MV;
+			k_2 = k_2*jacobian(coordinates);
+			val_1 -= ((3*r1 + r2 + r3)*k_2/60 + (2*r1 + 2*r2 + r3)*k_2/120 + 
+					(2*r1 + r2 + 2*r3)*k_2/120)*C_V_AMB;
+
+			val_2 -= ((2*r1 + 2*r2 + r3)*k_2/120 + (r1 + 3*r2 + r3)*k_2/60 +
+					(r1 + 2*r2 + 2*r3)*k_2/120)*C_V_AMB;
+			
+			val_3 -= ((2*r1 + r2 + 2*r3)*k_2/120 + (r1 + 2*r2 + 2*r3)*k_2/120
+				   	+ (r1 + r2 + 3*r3)*k_2/60)*C_V_AMB;
 
 			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) + 
 					val_1);
@@ -565,13 +576,36 @@ class ElementTriangular : public Element<P, I>{
 			n_2 += NUM_NODES;
 			n_3 += NUM_NODES;
 
-			//k = (C_U_AMB*V_MU*RESP_Q + K_MFU*MAX_FERM_CO2 + K_MFU*V_MU*RESP_Q)
-			//	*jacobian(coordinates)/(24*(C_U_AMB+K_MFU));
 
-			k = V_MU*RESP_Q*jacobian(coordinates)/(24);
+			k_2 = -MAX_FERM_CO2*K_MFU;
+			k_2 = k_2*jacobian(coordinates);
+	
+			k = (C_U_AMB*V_MU*RESP_Q + K_MFU*MAX_FERM_CO2 + K_MFU*V_MU*RESP_Q)
+				*jacobian(coordinates)/(24*(C_U_AMB+K_MFU));		
 			val_1 = (2*r1 + r2 + r3)*k;
 			val_2 = (r1 + 2*r2 + r3)*k;
 			val_3 = (r1 + r2 + 2*r3)*k;
+
+			val_1 -= ((3*r1 + r2 + r3)*k_2/(60*pow(C_U_AMB, 2) + 
+						120*C_U_AMB*K_MFU + 60*pow(K_MFU, 2)) + 
+					(2*r1 + 2*r2 + r3)*k_2/(120*pow(C_U_AMB, 2) + 
+						240*C_U_AMB*K_MFU + 120*pow(K_MFU, 2)) + (2*r1 + r2 +
+					   	2*r3)*k_2/(120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+					120*pow(K_MFU, 2)))*C_U_AMB;
+
+			val_2 -= ((2*r1 + 2*r2 + r3)*k_2/(120*pow(C_U_AMB, 2) + 
+						240*C_U_AMB*K_MFU + 120*pow(K_MFU, 2)) + (r1 + 3*r2 +
+					   	r3)*k_2/(60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
+							60*pow(K_MFU, 2)) + (r1 + 2*r2 + 2*r3)*k_2/(
+							120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+							120*pow(K_MFU, 2)))*C_U_AMB;
+			
+			val_3 -= ((2*r1 + r2 + 2*r3)*k_2/(120*pow(C_U_AMB, 2) + 
+						240*C_U_AMB*K_MFU + 120*pow(K_MFU, 2)) + (r1 + 2*r2 +
+						2*r3)*k_2/(120*pow(C_U_AMB, 2) + 240*C_U_AMB*K_MFU + 
+							120*pow(K_MFU, 2)) + (r1 + r2 + 3*r3)*k_2/(
+							60*pow(C_U_AMB, 2) + 120*C_U_AMB*K_MFU + 
+							60*pow(K_MFU, 2)))*C_U_AMB;
 
 			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) - 
 					val_1);
