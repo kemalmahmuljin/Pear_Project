@@ -136,7 +136,7 @@ for phii in phiis:
 	# Function_c1..c3..cM1..cM3
 	F = r*Vmu*C_a_u*phii/(Kmu+C_a_u)
 	# f-vector
-	integrand_f = F - (C_a_u*Dc1_u+C_a_u*Dc2_u+C_a_u*Dc2_u +0*DcM1_u+0*DcM2_u+0*DcM2_u)
+	integrand_f = F - (C_a_u*Dc1_u+C_a_u*Dc2_u+C_a_u*Dc3_u +0*DcM1_u+0*DcM2_u+0*DcM3_u)
 	int_f = sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1)))
 	print(" R_U: F- vector for ", phii, " :\n")
 	print(int_f)
@@ -170,19 +170,20 @@ for phii in phiis:
 	print("############################################################################")
 
 	#### IMPLEMENTING Rv
-	Dc1_v = -Vmfv*phi_1*phii/(Kmfu+C_a_u)	
-	Dc2_v = -Vmfv*phi_2*phii/(Kmfu+C_a_u)
-	Dc3_v = -Vmfv*phi_3*phii/(Kmfu+C_a_u)
+	Dc1_v = -Vmfv*phi_1*phii/Kmfu*(1+C_a_u/Kmfu)**2	
+	Dc2_v = -Vmfv*phi_2*phii/Kmfu*(1+C_a_u/Kmfu)**2	
+	Dc3_v = -Vmfv*phi_3*phii/Kmfu*(1+C_a_u/Kmfu)**2	
 
-	integrand_f = Vmfv/(1+C_a_u/Kmfu) -(C_a_u*Dc1_v+C_a_u*Dc2_v+C_a_u*Dc2_v)
-	int_f = rq*int_f + sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1)))
+	integrand_f = Vmfv/(1+C_a_u/Kmfu) -(C_a_u*Dc1_v+C_a_u*Dc2_v+C_a_u*Dc3_v)
+	int_f =sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1)))
+	int_f = sp.simplify(int_f)
 	print(" R_V: F- vector for ", phii, " :\n")
 	print(int_f)
 	print("\n")
 
-	int_c1 = rq*int_c1 + sp.simplify( sp.integrate(sp.integrate(Dc1_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_c2 = rq*int_c2 + sp.simplify( sp.integrate(sp.integrate(Dc2_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_c3 = rq*int_c3 + sp.simplify( sp.integrate(sp.integrate(Dc3_v, (n, 0, 1-e)), (e, 0, 1)))
+	int_c1 =sp.simplify( sp.integrate(sp.integrate(Dc1_v, (n, 0, 1-e)), (e, 0, 1)))
+	int_c2 =sp.simplify( sp.integrate(sp.integrate(Dc2_v, (n, 0, 1-e)), (e, 0, 1)))
+	int_c3 =sp.simplify( sp.integrate(sp.integrate(Dc3_v, (n, 0, 1-e)), (e, 0, 1)))
 	print(" R_V: Delta_c1..c3..cM1..cM3 vectors for ", phii, " :\n")
 	print(int_c1)
 	print("\n")
