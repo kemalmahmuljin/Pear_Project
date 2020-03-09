@@ -169,7 +169,6 @@ class ConcentrationModel{
 			do{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
 						f_vector_, tolerance, coefficients_, work);
-			//	std::cout<<coefficients()<<std::endl;
 				residual = gsl_splinalg_itersolve_normr(work);
 				if (status == GSL_SUCCESS)
 					fprintf(stderr, "Converged\n");
@@ -184,10 +183,24 @@ class ConcentrationModel{
 		int	get_integral_vector(size_t cuad_points){
 			gsl_vector_set_all(helper_, 0.0);
 			for (auto elem : elements_){
-				elem.integrate_non_linear_term_2(coefficients_, coordinates_,
+				elem.integrate_non_linear_term(coefficients_, coordinates_,
 						cuad_points, helper_);
 			}
 			return EXIT_SUCCESS;
+		}
+
+		int solve_linear_model_LU(){
+			int status;
+			gsl_matrix* dense_stiff = gsl_matrix_alloc((size_t)(2*number_nodes_), 
+					(size_t)(2*number_nodes_));
+			gsl_spmatrix_sp2d(dense_stiff, stiffness_matrix_);
+			gsl_permutation* permut = gsl_permutation_alloc((size_t)(2*number_nodes_));
+			gsl_linalg_LU_decomp(dense_stiff, permut, &status);
+			gsl_linalg_LU_solve(dense_stiff, permut, f_vector_, coefficients_);
+			
+			gsl_permutation_free(permut);
+			gsl_matrix_free(dense_stiff);
+			return 0;
 		}
 
 		int solve_nonlinear_model(){
@@ -205,8 +218,7 @@ class ConcentrationModel{
 			add_linear_approx_to_stiffness();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
 			FEM_module::write_vector_to_file(f_vector_, "f_vector");
-			solve_linear_model();
-			
+			solve_linear_model_LU();
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
 			
 			generate_stiffness_matrix();
@@ -214,7 +226,7 @@ class ConcentrationModel{
 			gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-				nls_functor(*this, 20);
+				nls_functor(*this, 3);
 			
 			gsl_multiroot_function nls_function;
 			nls_function.f = &FEM_module::non_linear_function;
@@ -238,7 +250,6 @@ class ConcentrationModel{
 			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
 		}
-
 
 		// Output
 		int write_coordinates_to_file(std::string filename){
