@@ -183,7 +183,7 @@ class ConcentrationModel{
 		int	get_integral_vector(size_t cuad_points){
 			gsl_vector_set_all(helper_, 0.0);
 			for (auto elem : elements_){
-				elem.integrate_non_linear_term(coefficients_, coordinates_,
+				elem.integrate_non_linear_term_3(coefficients_, coordinates_,
 						cuad_points, helper_);
 			}
 			return EXIT_SUCCESS;
@@ -221,33 +221,33 @@ class ConcentrationModel{
 			solve_linear_model_LU();
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
 			
-			//generate_stiffness_matrix();
-			//generate_f_vector();
-			//gsl_vector_set_all(coefficients_, 0);
-			//
-			//FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-			//	nls_functor(*this, 3);
-			//
-			//gsl_multiroot_function nls_function;
-			//nls_function.f = &FEM_module::non_linear_function;
-			//nls_function.n = 2*number_nodes_;
-			//nls_function.params = &nls_functor;
+			generate_stiffness_matrix();
+			generate_f_vector();
+			gsl_vector_set_all(coefficients_, 0);
+			
+			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
+				nls_functor(*this, 3);
+			
+			gsl_multiroot_function nls_function;
+			nls_function.f = &FEM_module::non_linear_function;
+			nls_function.n = 2*number_nodes_;
+			nls_function.params = &nls_functor;
 
-			//gsl_multiroot_fsolver_set(nonlinear_solver, &nls_function, 
-			//		coefficients_);
-			//int count = 1;
-			//do {
-			//	//std::cout<<"Iteration "<<count<<std::endl;
-			//	//std::cout<<FEM_module::vector_to_string(coefficients_)<<
-			//	//	std::endl;
-			//	gsl_multiroot_fsolver_iterate(nonlinear_solver);
-			//	condition = gsl_multiroot_test_residual(
-			//			gsl_multiroot_fsolver_f(nonlinear_solver), 1e-8);
-			//	count++;
-			//} while(condition != GSL_SUCCESS);
-			//FEM_module::write_vector_to_file(coefficients_, "final_coeff");
-			//
-			//gsl_multiroot_fsolver_free(nonlinear_solver);	
+			gsl_multiroot_fsolver_set(nonlinear_solver, &nls_function, 
+					coefficients_);
+			int count = 1;
+			do {
+				//std::cout<<"Iteration "<<count<<std::endl;
+				//std::cout<<FEM_module::vector_to_string(coefficients_)<<
+				//	std::endl;
+				gsl_multiroot_fsolver_iterate(nonlinear_solver);
+				condition = gsl_multiroot_test_residual(
+						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-8);
+				count++;
+			} while(condition != GSL_SUCCESS);
+			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
+			
+			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
 		}
 

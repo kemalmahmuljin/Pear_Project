@@ -320,6 +320,40 @@ class ElementTriangular : public Element<P, I>{
 						result_v);
 			}
 			return EXIT_SUCCESS;
+		}
+
+		int integrate_non_linear_term_3(const gsl_vector* coefficients,
+				const std::vector<std::vector<precision_t>>& coordinates,
+				size_t points, gsl_vector* result_vector){
+			precision_t result_u;
+			precision_t result_v;
+			
+			for (int node_idx = 0; node_idx < 3; node_idx++){
+				result_u += integrand_u(0.5, 0, coefficients, coordinates, 
+						node_idx)/6;
+				result_u += integrand_u(0, 0.5, coefficients, coordinates, 
+						node_idx)/6;
+				result_u += integrand_u(0.5, 0.5, coefficients, coordinates, 
+						node_idx)/6;
+
+				result_v += integrand_v(0.5, 0, coefficients, coordinates, 
+						node_idx)/6;
+				result_v += integrand_v(0, 0.5, coefficients, coordinates, 
+						node_idx)/6;
+				result_v += integrand_v(0.5, 0.5, coefficients, coordinates, 
+						node_idx)/6;
+				
+				gsl_vector_set(result_vector, 
+						(size_t)(this->nodes_[node_idx]), 
+						gsl_vector_get(result_vector, 
+							(size_t)(this->nodes_[node_idx])) + result_u);
+				gsl_vector_set(result_vector, 
+						(size_t)(this->nodes_[node_idx] + NUM_NODES), 
+						gsl_vector_get(result_vector, 
+							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
+						result_v);
+			}
+			return EXIT_SUCCESS;
 		}		
 
 		int update_stiffness_matrix(
