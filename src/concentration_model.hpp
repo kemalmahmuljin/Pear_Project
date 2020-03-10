@@ -223,7 +223,6 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			gsl_vector_set_all(coefficients_, 0);
 			
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 3);
@@ -237,12 +236,12 @@ class ConcentrationModel{
 					coefficients_);
 			int count = 1;
 			do {
-				//std::cout<<"Iteration "<<count<<std::endl;
-				//std::cout<<FEM_module::vector_to_string(coefficients_)<<
-				//	std::endl;
+				std::cout<<"Iteration "<<count<<std::endl;
+				std::cout<<FEM_module::vector_to_string(coefficients_)<<
+					std::endl;
 				gsl_multiroot_fsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
-						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-8);
+						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-9);
 				count++;
 			} while(condition != GSL_SUCCESS);
 			FEM_module::write_vector_to_file(coefficients_, "final_coeff");

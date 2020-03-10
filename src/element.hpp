@@ -125,22 +125,9 @@ class ElementTriangular : public Element<P, I>{
 		precision_t phi_3(precision_t epsilon, precision_t eta){
 			return eta;
 		}
-
-		precision_t r_u_num(const gsl_vector* coefficients, 
-				precision_t epsilon, precision_t eta){
-			precision_t p_1 = phi_1(epsilon, eta);
-			precision_t p_2 = phi_2(epsilon, eta);
-			precision_t p_3 = phi_3(epsilon, eta);
-
-			precision_t res = 
-				p_1*gsl_vector_get(coefficients, (size_t)this->nodes_[0]) +
-				p_2*gsl_vector_get(coefficients, (size_t)this->nodes_[1]) +
-				p_3*gsl_vector_get(coefficients, (size_t)this->nodes_[2]);
-			res *= V_MU;
-			return res;
-		}
-
-		precision_t r_u_den(const gsl_vector* coefficients, 
+		
+	public:
+		precision_t r_u(const gsl_vector* coefficients, 
 				precision_t epsilon, precision_t eta){
 			precision_t p_1 = phi_1(epsilon, eta);
 			precision_t p_2 = phi_2(epsilon, eta);
@@ -157,25 +144,9 @@ class ElementTriangular : public Element<P, I>{
 					(size_t)this->nodes_[1] + NUM_NODES);
 			precision_t c_v_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2] + NUM_NODES);
-			precision_t res = K_MU;
-			res += K_MU*(p_1*c_v_1/K_MV + 
-						p_2*c_v_2/K_MV + 
-						p_3*c_v_3/K_MV);
-			res += p_1*c_u_1 + p_2*c_u_2 + p_3*c_u_3;
-			res += (c_u_1*c_v_1*pow(p_1, 2) + 
-				c_u_2*c_v_2*pow(p_2, 2) +
-				c_u_3*c_v_3*pow(p_3, 2))/K_MV;
-			res += (c_u_1*p_1*(c_v_2*p_2 + c_v_3*p_3) +
-				c_u_2*p_2*(c_v_1*p_1 + c_v_3*p_3) +
-				c_v_3*p_3*(c_v_1*p_1 + c_v_2*p_2))/K_MV;
-			return res;
-		}
-
-	public:
-		precision_t r_u(const gsl_vector* coefficients, 
-				precision_t epsilon, precision_t eta){
-			return r_u_num(coefficients, epsilon, eta)/
-				r_u_den(coefficients, epsilon, eta);
+			precision_t c_u = c_u_1*p_1 + c_u_2*p_2+c_u_3*p_3;
+			precision_t c_v = c_v_1*p_1 + c_v_2*p_2+c_v_3*p_3;
+			return V_MU*c_u/((K_MU + c_u)*(1 + c_v/K_MV));
 		}
 
 		precision_t r_v(const gsl_vector* coefficients, 
@@ -329,20 +300,18 @@ class ElementTriangular : public Element<P, I>{
 			precision_t result_v;
 			
 			for (int node_idx = 0; node_idx < 3; node_idx++){
-				result_u += integrand_u(0.5, 0, coefficients, coordinates, 
-						node_idx)/6;
-				result_u += integrand_u(0, 0.5, coefficients, coordinates, 
-						node_idx)/6;
-				result_u += integrand_u(0.5, 0.5, coefficients, coordinates, 
-						node_idx)/6;
+				result_u = (
+					integrand_u(0.5, 0, coefficients, coordinates, node_idx) + 
+					integrand_u(0, 0.5, coefficients, coordinates, node_idx) +
+					integrand_u(0.5, 0.5, coefficients, coordinates, node_idx)
+					)/6;
 
-				result_v += integrand_v(0.5, 0, coefficients, coordinates, 
-						node_idx)/6;
-				result_v += integrand_v(0, 0.5, coefficients, coordinates, 
-						node_idx)/6;
-				result_v += integrand_v(0.5, 0.5, coefficients, coordinates, 
-						node_idx)/6;
-				
+				result_v = (
+					integrand_v(0.5, 0, coefficients, coordinates, node_idx) +
+					integrand_v(0, 0.5, coefficients, coordinates, node_idx) +
+					integrand_v(0.5, 0.5, coefficients, coordinates, node_idx)
+					)/6;
+
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
 						gsl_vector_get(result_vector, 
