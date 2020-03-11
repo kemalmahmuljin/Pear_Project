@@ -125,6 +125,19 @@ class ElementTriangular : public Element<P, I>{
 		precision_t phi_3(precision_t epsilon, precision_t eta){
 			return eta;
 		}
+
+		precision_t phi(precision_t epsilon, precision_t eta, int idx){
+			assert((idx > 0) && (idx < 4));
+			if (idx == 1){
+				return phi_1(epsilon, eta);
+			}
+			else if (idx == 2){
+				return phi_2(epsilon, eta);
+			}
+			else if (idx == 3){
+				return phi_3(epsilon, eta);
+			}
+		}
 		
 	public:
 		precision_t r_u(const gsl_vector* coefficients, 
@@ -192,6 +205,7 @@ class ElementTriangular : public Element<P, I>{
 			 * integrand_res.
 			 * Note that integrand_v hast 3 components, it's not a gloval ector
 			*/
+			assert((node_idx > 0) && (node_idx < 4));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
 			precision_t r2 = coordinates[this->nodes_[1]][0];
 			precision_t r3 = coordinates[this->nodes_[2]][0];
@@ -218,6 +232,7 @@ class ElementTriangular : public Element<P, I>{
 			 * integrand_res.
 			 * Note that integrand_v hast 3 components, it's not a gloval ector
 			*/
+			assert((node_idx > 0) && (node_idx < 4));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
 			precision_t r2 = coordinates[this->nodes_[1]][0];
 			precision_t r3 = coordinates[this->nodes_[2]][0];
@@ -233,6 +248,13 @@ class ElementTriangular : public Element<P, I>{
 			}
 		}
 
+		//precision_t grad_integrand_u(precision_t u, precision_t v, 
+		//		const gsl_vector* coefficients,
+		//		const std::vector<std::vector<precision_t>>& coordinates,
+		//		node_t node_idx, node_t coef_idx){
+		//	
+		//}
+
 		int integrate_non_linear_term(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				size_t points, gsl_vector* result_vector){
@@ -244,6 +266,7 @@ class ElementTriangular : public Element<P, I>{
 			precision_t w_j;
 			precision_t result_u;
 			precision_t result_v;
+			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = 0;
 				result_v = 0;
@@ -252,9 +275,9 @@ class ElementTriangular : public Element<P, I>{
 					for (size_t j = 0; j < points; j++){
 						gsl_integration_glfixed_point(0, 1, j, &v, &w_j, table);
 						result_u += w_j*w_i*integrand_u(u, v/(1 - u), 
-								coefficients, coordinates, node_idx)*(1 - u);
+								coefficients, coordinates, phi_idx)*(1 - u);
 						result_v += w_j*w_i*integrand_v(u, v/(1 - u), 
-								coefficients, coordinates, node_idx)*(1 - u);
+								coefficients, coordinates, phi_idx)*(1 - u);
 					}
 				}
 				gsl_vector_set(result_vector, 
@@ -266,6 +289,7 @@ class ElementTriangular : public Element<P, I>{
 						gsl_vector_get(result_vector, 
 							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
 						result_v);
+				phi_idx++;
 			}
 			return EXIT_SUCCESS;
 		}
@@ -275,11 +299,12 @@ class ElementTriangular : public Element<P, I>{
 				size_t points, gsl_vector* result_vector){
 			precision_t result_u;
 			precision_t result_v;
+			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = integrand_u(1/3, 1/3, coefficients, coordinates, 
-						node_idx)/2;
+						phi_idx)/2;
 				result_v = integrand_v(1/3, 1/3, coefficients, coordinates, 
-						node_idx)/2;
+						phi_idx)/2;
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
 						gsl_vector_get(result_vector, 
@@ -289,6 +314,7 @@ class ElementTriangular : public Element<P, I>{
 						gsl_vector_get(result_vector, 
 							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
 						result_v);
+				phi_idx++;
 			}
 			return EXIT_SUCCESS;
 		}
@@ -298,18 +324,18 @@ class ElementTriangular : public Element<P, I>{
 				size_t points, gsl_vector* result_vector){
 			precision_t result_u;
 			precision_t result_v;
-			
+			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = (
-					integrand_u(0.5, 0, coefficients, coordinates, node_idx) + 
-					integrand_u(0, 0.5, coefficients, coordinates, node_idx) +
-					integrand_u(0.5, 0.5, coefficients, coordinates, node_idx)
+					integrand_u(0.5, 0, coefficients, coordinates, phi_idx) + 
+					integrand_u(0, 0.5, coefficients, coordinates, phi_idx) +
+					integrand_u(0.5, 0.5, coefficients, coordinates, phi_idx)
 					)/6;
 
 				result_v = (
-					integrand_v(0.5, 0, coefficients, coordinates, node_idx) +
-					integrand_v(0, 0.5, coefficients, coordinates, node_idx) +
-					integrand_v(0.5, 0.5, coefficients, coordinates, node_idx)
+					integrand_v(0.5, 0, coefficients, coordinates, phi_idx) +
+					integrand_v(0, 0.5, coefficients, coordinates, phi_idx) +
+					integrand_v(0.5, 0.5, coefficients, coordinates, phi_idx)
 					)/6;
 
 				gsl_vector_set(result_vector, 
@@ -321,9 +347,10 @@ class ElementTriangular : public Element<P, I>{
 						gsl_vector_get(result_vector, 
 							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
 						result_v);
+				phi_idx++;
 			}
 			return EXIT_SUCCESS;
-		}		
+		}
 
 		int update_stiffness_matrix(
 				const std::vector<std::vector<precision_t>>& coordinates,

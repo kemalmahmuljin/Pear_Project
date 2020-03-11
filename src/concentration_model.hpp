@@ -19,6 +19,11 @@
 #include "pear_functors.hpp"
 #endif
 
+//#ifdef GSL_SQRT_DBL_EPSILON
+//#undef GSL_SQRT_DBL_EPSILON
+//#endif
+//const double GSL_SQRT_DBL_EPSILON = 1e-3;
+
 namespace FEM_module{
 
 template<typename P, typename I>
