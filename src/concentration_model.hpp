@@ -30,6 +30,9 @@ template<typename P, typename I>
 class NonLinearSystemFunctor;
 
 template<typename P, typename I>
+class JacobianFunctor;
+
+template<typename P, typename I>
 class ConcentrationModel{
 	public:
 		typedef P precision_t;
@@ -154,10 +157,18 @@ class ConcentrationModel{
 						*f_vector_);
 			}
 		}
+		
+		int update_matrix_with_jacobian(gsl_matrix* matrix_to_update){
+			for (auto elem : elements_){
+				elem.update_with_jacobian(coefficients_, 
+						coordinates_, matrix_to_update);
+			}
+			
+		}
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-6;
+			const precision_t tolerance = 1.0e-9;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -208,7 +219,7 @@ class ConcentrationModel{
 			return 0;
 		}
 
-		int solve_nonlinear_model(){
+		int solve_nonlinear_model_fd(){
 			int condition = 0;
 			const gsl_multiroot_fsolver_type* nonlinear_solver_type;
 			nonlinear_solver_type = gsl_multiroot_fsolver_dnewton;
@@ -228,14 +239,15 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			
+
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 3);
-			
+			struct solver_params params = {};
+			params.func = &nls_functor;
 			gsl_multiroot_function nls_function;
 			nls_function.f = &FEM_module::non_linear_function;
 			nls_function.n = 2*number_nodes_;
-			nls_function.params = &nls_functor;
+			nls_function.params = &params;
 
 			gsl_multiroot_fsolver_set(nonlinear_solver, &nls_function, 
 					coefficients_);
@@ -252,6 +264,59 @@ class ConcentrationModel{
 			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
 			
 			gsl_multiroot_fsolver_free(nonlinear_solver);	
+			return EXIT_SUCCESS;
+		}
+
+		int solve_nonlinear_model(){
+			int condition = 0;
+			const gsl_multiroot_fdfsolver_type* nonlinear_solver_type;
+			nonlinear_solver_type = gsl_multiroot_fdfsolver_newton;
+			gsl_multiroot_fdfsolver* nonlinear_solver = 
+				gsl_multiroot_fdfsolver_alloc(nonlinear_solver_type,
+						(size_t)(2*number_nodes_));
+			
+			generate_stiffness_matrix();
+			generate_f_vector();
+			add_linear_approx_to_f_vector();
+			gsl_vector_scale(f_vector_, -1.0);
+			add_linear_approx_to_stiffness();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
+			FEM_module::write_vector_to_file(f_vector_, "f_vector");
+			solve_linear_model_LU();
+			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
+			
+			generate_stiffness_matrix();
+			generate_f_vector();
+
+			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
+				nls_functor(*this, 3);
+			FEM_module::JacobianFunctor<precision_t, node_t> 
+				jac_functor(*this);
+			struct solver_params params = {};
+			params.func = &nls_functor;
+			params.jac = &jac_functor;
+			gsl_multiroot_function_fdf nls_function;
+			nls_function.f = &FEM_module::non_linear_function;
+			nls_function.df = &FEM_module::jacobian_function;
+			nls_function.fdf = &FEM_module::fdf_function;
+			nls_function.n = 2*number_nodes_;
+			nls_function.params = &params;
+
+			gsl_multiroot_fdfsolver_set(nonlinear_solver, &nls_function, 
+					coefficients_);
+			int count = 1;
+			do {
+				std::cout<<"Iteration "<<count<<std::endl;
+				std::cout<<FEM_module::vector_to_string(coefficients_)<<
+					std::endl;
+				gsl_multiroot_fdfsolver_iterate(nonlinear_solver);
+				condition = gsl_multiroot_test_residual(
+						gsl_multiroot_fdfsolver_f(nonlinear_solver), 1e-9);
+				count++;
+			} while(condition != GSL_SUCCESS);
+			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
+			
+			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
 		}
 

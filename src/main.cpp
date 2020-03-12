@@ -57,8 +57,9 @@ typename FEM_module::Element<P, I>::node_t
 	FEM_module::ElementTriangular<P, I>::NUM_ELM = 0;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementTriangular<P, I>::NUM_NODES = 142;
-	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 19;
+	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 42;
+	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 142;
+	FEM_module::ElementTriangular<P, I>::NUM_NODES = 19;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*0.208/(8.32*293);
@@ -81,9 +82,10 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementBoundary<P, I>::RHO_V = 7.5e-7;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementBoundary<P, I>::NUM_NODES = 142;
-	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 19;
-
+	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 42;
+	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 142;
+	FEM_module::ElementBoundary<P, I>::NUM_NODES = 19;
+	
 int test2(){
 	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
 	mesh_importer.process_file();
@@ -129,7 +131,7 @@ int test_quadrature(){
 	FEM_module::ElementTriangular<double, int> test_element(coords, nodes);
 	test_element.r_u(coeff, 0.5, 0.1);
 	test_element.r_v(coeff, 0.5, 0.1);
-	test_element.integrate_non_linear_term(coeff, coords, 15, result);
+	test_element.integrate_non_linear_term_3(coeff, coords, 15, result);
 
 	gsl_vector_free(coeff);
 	gsl_vector_free(result);
@@ -150,7 +152,7 @@ int test_concentration_model_1(){
 
 int test_concentration_model_2(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear_3.msh");
+	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/circle.msh");
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);

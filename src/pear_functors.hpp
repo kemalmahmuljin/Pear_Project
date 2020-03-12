@@ -50,11 +50,61 @@ class NonLinearSystemFunctor{
 		}
 };
 
+template<typename P, typename I>
+class JacobianFunctor{
+	public:
+		typedef P precision_t;
+		typedef I node_t;
+	private:
+		FEM_module::ConcentrationModel<precision_t, node_t>& model_;
+	public:
+		JacobianFunctor(FEM_module::ConcentrationModel<precision_t, 
+				node_t>& model)
+		: model_(model)
+		{}
+		
+		int operator()(const gsl_vector* x, void* params,
+				gsl_matrix* j){
+			gsl_spmatrix_sp2d(j, model_.stiffness_matrix());
+			model_.update_matrix_with_jacobian(j);
+			return EXIT_SUCCESS;
+		}
+};
+
+struct solver_params {
+	FEM_module::NonLinearSystemFunctor<double, int>* func;
+	FEM_module::JacobianFunctor<double, int>* jac;
+};
+
 extern "C" int non_linear_function(const gsl_vector* x, void *param, 
 		gsl_vector* f){
+	struct FEM_module::solver_params* parameters = 
+		(struct FEM_module::solver_params*)param;
 	NonLinearSystemFunctor<double, int> *my_functor =
-		(NonLinearSystemFunctor<double, int> *)param;
+		(NonLinearSystemFunctor<double, int> *)parameters->func;
 	return (*my_functor)(x, NULL, f);
+}
+
+extern "C" int jacobian_function(const gsl_vector* x, void *param, 
+		gsl_matrix* j){
+	struct FEM_module::solver_params* parameters = 
+		(struct FEM_module::solver_params*)param;
+	JacobianFunctor<double, int> *my_functor =
+		(JacobianFunctor<double, int>*)parameters->jac;
+	return (*my_functor)(x, NULL, j);
+}
+
+extern "C" int fdf_function(const gsl_vector* x, void *param,
+		gsl_vector* f, gsl_matrix* j){
+	struct FEM_module::solver_params* parameters = 
+		(struct FEM_module::solver_params*)param;
+	NonLinearSystemFunctor<double, int>* my_functor1 =
+		(NonLinearSystemFunctor<double, int>*)parameters->func;
+	JacobianFunctor<double, int>* my_functor2 =
+		(JacobianFunctor<double, int> *)parameters->jac;
+	(*my_functor1)(x, NULL, f);
+	(*my_functor2)(x, NULL, j);
+	return EXIT_SUCCESS;
 }
 
 std::string vector_to_string(const gsl_vector* vector_to_print){
@@ -67,7 +117,7 @@ std::string vector_to_string(const gsl_vector* vector_to_print){
 	return str_stream.str();
 }
 
-std::string matrix_to_string(const gsl_spmatrix* matrix_to_print){
+std::string spmatrix_to_string(const gsl_spmatrix* matrix_to_print){
 	std::stringstream str_stream;
 	str_stream<<"("<<matrix_to_print->size1<<", "<<matrix_to_print->size2<<
 		")"<<std::endl;
@@ -81,10 +131,24 @@ std::string matrix_to_string(const gsl_spmatrix* matrix_to_print){
 	return str_stream.str();
 }
 
+std::string matrix_to_string(const gsl_matrix* matrix_to_print){
+	std::stringstream str_stream;
+	str_stream<<"("<<matrix_to_print->size1<<", "<<matrix_to_print->size2<<
+		")"<<std::endl;
+	for (size_t i = 0; i < matrix_to_print->size1; i++){
+		for (size_t j = 0; j < matrix_to_print->size2; j++){
+			str_stream<<gsl_matrix_get(matrix_to_print, i, j)<<" ";
+		}
+		str_stream<<std::endl;
+	} 
+	str_stream<<std::endl;
+	return str_stream.str();
+}
+
 int write_matrix_to_file(const gsl_spmatrix* mtrx, std::string filename){
 	std::ofstream myfile;
 	myfile.open(filename, std::ios::out);
-	myfile<<matrix_to_string(mtrx);
+	myfile<<spmatrix_to_string(mtrx);
 	myfile.close();	
 }
 

@@ -173,7 +173,7 @@ class ElementTriangular : public Element<P, I>{
 					(size_t)this->nodes_[1]);
 			precision_t c_u_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2]);
-			precision_t c_u = p_1*c_u_1 + p_2*c_u_2 + p_3*c_u_3; 
+			precision_t c_u = p_1*c_u_1 + p_2*c_u_2 + p_3*c_u_3;
 			return RESP_Q*r_u(coefficients, epsilon, eta) + 
 				MAX_FERM_CO2/(1 + c_u/K_MFU);
 		}
@@ -248,51 +248,127 @@ class ElementTriangular : public Element<P, I>{
 			}
 		}
 
-		//precision_t grad_integrand_u(precision_t u, precision_t v, 
-		//		const gsl_vector* coefficients,
-		//		const std::vector<std::vector<precision_t>>& coordinates,
-		//		node_t node_idx, node_t coef_idx){
-		//	
-		//}
-
-		int integrate_non_linear_term(const gsl_vector* coefficients,
+		precision_t diff_integrand_u(precision_t epsilon, precision_t eta, 
+				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
-				size_t points, gsl_vector* result_vector){
-			gsl_integration_glfixed_table* table = 
-				gsl_integration_glfixed_table_alloc(points);
-			precision_t u;
-			precision_t v;
-			precision_t w_i;
-			precision_t w_j;
-			precision_t result_u;
-			precision_t result_v;
-			int phi_idx = 1;
-			for (int node_idx = 0; node_idx < 3; node_idx++){
-				result_u = 0;
-				result_v = 0;
-				for (size_t i = 0; i < points; i++){
-					gsl_integration_glfixed_point(0, 1, i, &u, &w_i, table);
-					for (size_t j = 0; j < points; j++){
-						gsl_integration_glfixed_point(0, 1, j, &v, &w_j, table);
-						result_u += w_j*w_i*integrand_u(u, v/(1 - u), 
-								coefficients, coordinates, phi_idx)*(1 - u);
-						result_v += w_j*w_i*integrand_v(u, v/(1 - u), 
-								coefficients, coordinates, phi_idx)*(1 - u);
-					}
-				}
-				gsl_vector_set(result_vector, 
-						(size_t)(this->nodes_[node_idx]), 
-						gsl_vector_get(result_vector, 
-							(size_t)(this->nodes_[node_idx])) + result_u);
-				gsl_vector_set(result_vector, 
-						(size_t)(this->nodes_[node_idx] + NUM_NODES), 
-						gsl_vector_get(result_vector, 
-							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
-						result_v);
-				phi_idx++;
+				node_t node_idx, int coef_idx){
+			assert((coef_idx > 0) && (coef_idx < 7));
+			assert((node_idx >= 0) && (node_idx < 3));
+			precision_t r1 = coordinates[this->nodes_[0]][0];
+			precision_t r2 = coordinates[this->nodes_[1]][0];
+			precision_t r3 = coordinates[this->nodes_[2]][0];
+			precision_t p_1 = phi_1(epsilon, eta);
+			precision_t p_2 = phi_2(epsilon, eta);
+			precision_t p_3 = phi_3(epsilon, eta);
+			precision_t c_u_1 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[0]);
+			precision_t c_u_2 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[1]);
+			precision_t c_u_3 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[2]);
+			precision_t c_v_1 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[0] + NUM_NODES);
+			precision_t c_v_2 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[1] + NUM_NODES);
+			precision_t c_v_3 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[2] + NUM_NODES);
+			precision_t c_u = c_u_1*p_1 + c_u_2*p_2 + c_u_3*p_3;
+			precision_t c_v = c_v_1*p_1 + c_v_2*p_2 + c_v_3*p_3;
+			precision_t k = 0;
+			if (coef_idx < 4){
+				k = K_MU*K_MV*V_MU*(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)/
+					pow((K_MU  + c_u), 2)*(K_MV + c_v);
 			}
-			return EXIT_SUCCESS;
+			else{
+				k = -K_MU*V_MU*(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)*c_u/
+					(K_MU + c_u)*pow((K_MV + c_v), 2);
+			}
+			return k*phi(epsilon, eta, node_idx+1)*phi(epsilon, eta, 
+					coef_idx%3 + 1);
 		}
+
+		precision_t diff_integrand_v(precision_t epsilon, precision_t eta, 
+				const gsl_vector* coefficients,
+				const std::vector<std::vector<precision_t>>& coordinates,
+				node_t node_idx, int coef_idx){
+			assert((coef_idx > 0) && (coef_idx < 7));
+			assert((node_idx >= 0) && (node_idx < 3));
+			precision_t r1 = coordinates[this->nodes_[0]][0];
+			precision_t r2 = coordinates[this->nodes_[1]][0];
+			precision_t r3 = coordinates[this->nodes_[2]][0];
+			precision_t p_1 = phi_1(epsilon, eta);
+			precision_t p_2 = phi_2(epsilon, eta);
+			precision_t p_3 = phi_3(epsilon, eta);
+			precision_t c_u_1 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[0]);
+			precision_t c_u_2 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[1]);
+			precision_t c_u_3 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[2]);
+			precision_t c_v_1 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[0] + NUM_NODES);
+			precision_t c_v_2 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[1] + NUM_NODES);
+			precision_t c_v_3 = gsl_vector_get(coefficients, 
+					(size_t)this->nodes_[2] + NUM_NODES);
+			precision_t c_u = c_u_1*p_1 + c_u_2*p_2+c_u_3*p_3;
+			precision_t c_v = c_v_1*p_1 + c_v_2*p_2+c_v_3*p_3;
+			precision_t k = 0;
+			if (coef_idx < 4){
+				k = -(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)*
+					(K_MFU*MAX_FERM_CO2*pow((K_MU + c_u), 2)*(K_MV + c_v) +
+					K_MV*V_MU*RESP_Q*c_u*pow((K_MFU + c_u), 2) -
+					K_MV*V_MU*RESP_Q*pow((K_MFU + c_u), 2)*(K_MU + c_u))/
+					(pow((K_MFU + c_u), 2)*pow((K_MU + c_u), 2)*
+					 pow((K_MV + c_v), 2));
+			}
+			else{
+				k = -K_MV*V_MU*RESP_Q*
+					(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)
+					/((K_MU + c_u)*pow((K_MV + c_v), 2));
+			}
+			return k*phi(epsilon, eta, node_idx+1)*phi(epsilon, eta, 
+					coef_idx%3 + 1);
+		}
+
+		//int integrate_non_linear_term(const gsl_vector* coefficients,
+		//		const std::vector<std::vector<precision_t>>& coordinates,
+		//		size_t points, gsl_vector* result_vector){
+		//	gsl_integration_glfixed_table* table = 
+		//		gsl_integration_glfixed_table_alloc(points);
+		//	precision_t u;
+		//	precision_t v;
+		//	precision_t w_i;
+		//	precision_t w_j;
+		//	precision_t result_u;
+		//	precision_t result_v;
+		//	int phi_idx = 1;
+		//	for (int node_idx = 0; node_idx < 3; node_idx++){
+		//		result_u = 0;
+		//		result_v = 0;
+		//		for (size_t i = 0; i < points; i++){
+		//			gsl_integration_glfixed_point(0, 1, i, &u, &w_i, table);
+		//			for (size_t j = 0; j < points; j++){
+		//				gsl_integration_glfixed_point(0, 1, j, &v, &w_j, table);
+		//				result_u += w_j*w_i*integrand_u(u, v/(1 - u), 
+		//						coefficients, coordinates, phi_idx)*(1 - u);
+		//				result_v += w_j*w_i*integrand_v(u, v/(1 - u), 
+		//						coefficients, coordinates, phi_idx)*(1 - u);
+		//			}
+		//		}
+		//		gsl_vector_set(result_vector, 
+		//				(size_t)(this->nodes_[node_idx]), 
+		//				gsl_vector_get(result_vector, 
+		//					(size_t)(this->nodes_[node_idx])) + result_u);
+		//		gsl_vector_set(result_vector, 
+		//				(size_t)(this->nodes_[node_idx] + NUM_NODES), 
+		//				gsl_vector_get(result_vector, 
+		//					(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
+		//				result_v);
+		//		phi_idx++;
+		//	}
+		//	return EXIT_SUCCESS;
+		//}
 
 		int integrate_non_linear_term_2(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
@@ -327,7 +403,7 @@ class ElementTriangular : public Element<P, I>{
 			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = (
-					integrand_u(0.5, 0, coefficients, coordinates, phi_idx) + 
+					integrand_u(0.5, 0, coefficients, coordinates, phi_idx) +
 					integrand_u(0, 0.5, coefficients, coordinates, phi_idx) +
 					integrand_u(0.5, 0.5, coefficients, coordinates, phi_idx)
 					)/6;
@@ -348,6 +424,75 @@ class ElementTriangular : public Element<P, I>{
 							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
 						result_v);
 				phi_idx++;
+			}
+			return EXIT_SUCCESS;
+		}
+		
+		int update_with_jacobian(const gsl_vector* coefficients,
+				const std::vector<std::vector<precision_t>>& coordinates,
+				gsl_matrix* result_matrix){
+			precision_t result_uu;
+			precision_t result_uv;
+			precision_t result_vu;
+			precision_t result_vv;
+			size_t node_1;
+			size_t node_2;
+			for (int node_idx = 0; node_idx < 3; node_idx++){
+				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
+				node_1 = this->nodes_[node_idx];	
+				node_2 = this->nodes_[coeff_idx - 1];	
+				result_uu = jacobian(coordinates)*(
+					diff_integrand_u(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx) + 
+					diff_integrand_u(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx) +
+					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx)
+					)/6;
+
+				result_uv = jacobian(coordinates)*(
+					diff_integrand_u(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx + 3) + 
+					diff_integrand_u(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3) +
+					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3)
+					)/6;
+
+				result_vu = jacobian(coordinates)*(
+					diff_integrand_v(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx) + 
+					diff_integrand_v(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx) +
+					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx)
+					)/6;
+
+				result_vv = jacobian(coordinates)*(
+					diff_integrand_v(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx + 3) + 
+					diff_integrand_v(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3) +
+					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3)
+					)/6;
+
+				gsl_matrix_set(result_matrix, 
+						node_1, node_2, gsl_matrix_get(result_matrix, 
+							node_1, node_2) + result_uu);
+				gsl_matrix_set(result_matrix, 
+						node_1, node_2 + NUM_NODES, 
+						gsl_matrix_get(result_matrix, node_1, 
+							node_2 + NUM_NODES) + result_uv);
+				gsl_matrix_set(result_matrix, 
+						node_1 + NUM_NODES, node_2, gsl_matrix_get(
+							result_matrix, node_1 + NUM_NODES, node_2) - 
+						result_vu);
+				gsl_matrix_set(result_matrix, 
+						node_1 + NUM_NODES, node_2 + NUM_NODES, 
+						gsl_matrix_get(result_matrix, node_1 + NUM_NODES, 
+							node_2 + NUM_NODES) - result_vv);
+				} 
 			}
 			return EXIT_SUCCESS;
 		}
