@@ -33,3 +33,16 @@ for elem in nodes:
 
 plt.title("Working importer 23/02/20")
 plt.show()
+
+count = 0
+for elem in nodes:
+    ax = plt.axes()
+    for i in range(3):
+        ax.arrow(coords[elem[i%3]][0], coords[elem[i%3]][1],
+                coords[elem[(i+ 1)%3]][0]-coords[elem[i%3]][0],
+                coords[elem[(i + 1)%3]][1]-coords[elem[i%3]][1], 
+                head_width = 1)
+    plt.xlim(0,40)
+    plt.ylim(0,100)    
+    plt.show()
+    count += 1

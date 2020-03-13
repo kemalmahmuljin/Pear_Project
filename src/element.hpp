@@ -320,7 +320,7 @@ class ElementTriangular : public Element<P, I>{
 					K_MV*V_MU*RESP_Q*c_u*pow((K_MFU + c_u), 2) -
 					K_MV*V_MU*RESP_Q*pow((K_MFU + c_u), 2)*(K_MU + c_u))/
 					(pow((K_MFU + c_u), 2)*pow((K_MU + c_u), 2)*
-					 pow((K_MV + c_v), 2));
+					(K_MV + c_v));
 			}
 			else{
 				k = -K_MV*V_MU*RESP_Q*
