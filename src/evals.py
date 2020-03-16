@@ -56,7 +56,7 @@ T3 = C_a_u*Kmv*Vmu*(2*C_a_u*C_a_v*r1 + 2*C_a_u*C_a_v*r2 + 4*C_a_u*C_a_v*r3 + C_a
 
 c = sp.simplify(T2/(r1 + 2*r2 + r3))
 print('result: ', sp.simplify(T3/c))
-
+print('result: ', sp.simplify(T1/c))
 trial = (C_a_u*C_a_v + C_a_u*Kmv + C_a_v*Kmu + Kmv*Kmu)**2
 print('trial: ', sp.simplify(trial*c))
 '''
@@ -73,6 +73,7 @@ c = sp.simplify(T11/(3*r1 + r2 + r3))/2
 print('result: \n', sp.simplify(c))
 print('lets test: ', sp.simplify(T31/c) ) 
 print('lets test: ', sp.simplify(T21/c) ) 
+print('lets test: ', sp.simplify(T11/c) ) 
 trial = (C_a_v +Kmv)*(C_a_u + Kmu)**2
 print('trial: ', sp.simplify(trial*c))
 '''
@@ -90,88 +91,191 @@ print('lets test: ', sp.simplify(T31/c) )
 trial = (C_a_u +Kmu)*(C_a_v + Kmv)**2
 print('trial: ', sp.simplify(trial*c))
 '''
+## calculating
+def fun(num_l,denom_l,Bn, Bd, Wn, Wd):
+	substitutionBest = [ (C_a_u, 8.49), (C_a_v, 0.0163), (Kmv, 27.2438), (Kmu, 0.4103), (Vmu, 0.0031717356019947854), (Vmfv,0.0010016037021638822), (Kmfu, 0.11), (rq,0.95)]
+	substitutionWorst = [ (C_a_u, 0.9), (C_a_v, 0.31), (Kmv, 27.2438), (Kmu, 0.4103), (Vmu, 0.00021354264845612348) , (Vmfv,0.00014867742939012076), (Kmfu, 0.11), (rq,0.95)]
+	i = 0
+	tot_sum_numB = 0
+	sum_needed_numB = 0
+	tot_sum_numW = 0
+	sum_needed_numW = 0
+	actual_num = []
+	actual_denom = []
+	for elem in num_l:
+		i = i+1
+		ex =  elem 
+		B = ex.subs(substitutionBest)
+		W = ex.subs(substitutionWorst)
+		tot_sum_numB +=abs(B) 
+		tot_sum_numW += abs(W)
+		if( abs(B)>Bn or abs(W) > Wn): 
+			sum_needed_numB +=abs(B)
+			sum_needed_numW += abs(W)
+			actual_num.append(elem)
+			print("Best case: ",i ,B)
+			print("Worst case: ",i ,W)
+			print("=============================================")
+
+	print("current fraction: \n", "Best: ", sum_needed_numB/tot_sum_numB, "Worst: ", sum_needed_numW/tot_sum_numW) 
+
+	i = 0
+	tot_sum_denomB = 0
+	sum_needed_denomB = 0
+	tot_sum_denomW = 0
+	sum_needed_denomW = 0
+	print("=============================================")
+	print("=============================================")
+	print("=============================================")
+	for elem in denom_l:
+		i = i+1
+		ex =  elem 
+		B = ex.subs(substitutionBest)
+		W = ex.subs(substitutionWorst)
+		tot_sum_denomB += abs(B) 
+		tot_sum_denomW += abs(W) 
+
+		if( abs(B)>Bd or abs(W) > Wd): 
+			sum_needed_denomB +=abs(B) 
+			sum_needed_denomW += abs(W) 
+			actual_denom.append(elem)
+			print("Best case: ",i ,B)
+			print("Worst case: ",i ,W)
+			print("=============================================")
+
+	print("current fraction: \n", "Best: ", sum_needed_denomB/tot_sum_denomB, "Worst: ", sum_needed_denomW/tot_sum_denomW) 
+	##
+	print("num : \n", actual_num, "\ndenom: \n", actual_denom)
+
+'''
 ### constant belonging to F_v
 ########################################
 ########################################
 
 
-
-
 #determining constant
-#c = sp.simplify(T1/(2*r1 + r2 + r3))
+#c = sp.simplify(F1/(2*r1 + r2 + r3))
 #print('result: \n', sp.simplify(c))
-
+#print('test 2: \n', sp.simplify(F2/c))
+#print('test 3: \n', sp.simplify(F3/c))
 
 # splitting constant in numerator and denominator
-#num = 3*C_a_u**4*C_a_v*Kmv*Vmu*rq + C_a_u**4*Kmv**2*Vmu*rq + 2*C_a_u**3*C_a_v**2*Kmfu*Vmfv + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmfv + 6*C_a_u**3*C_a_v*Kmfu*Kmv*Vmu*rq + C_a_u**3*C_a_v*Kmu*Kmv*Vmu*rq + 2*C_a_u**3*Kmfu*Kmv**2*Vmfv + 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq - C_a_u**3*Kmu*Kmv**2*Vmu*rq + C_a_u**2*C_a_v**2*Kmfu**2*Vmfv + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu*Vmfv + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmfv + 3*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmu*rq + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmfv + 2*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmu*rq + C_a_u**2*Kmfu**2*Kmv**2*Vmfv + C_a_u**2*Kmfu**2*Kmv**2*Vmu*rq + 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv - 2*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmu*rq + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu*Vmfv + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2*Vmfv + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmfv + C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmu*rq + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv*Vmfv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2*Vmfv - C_a_u*Kmfu**2*Kmu*Kmv**2*Vmu*rq + 2*C_a_u*Kmfu*Kmu**2*Kmv**2*Vmfv + C_a_v**2*Kmfu**2*Kmu**2*Vmfv + 2*C_a_v*Kmfu**2*Kmu**2*Kmv*Vmfv + Kmfu**2*Kmu**2*Kmv**2*Vmfv
 
-#denom = ( C_a_u**4*C_a_v**2 + 2*C_a_u**4*C_a_v*Kmv + C_a_u**4*Kmv**2 + 2*C_a_u**3*C_a_v**2*Kmfu + 2*C_a_u**3*C_a_v**2*Kmu + 4*C_a_u**3*C_a_v*Kmfu*Kmv + 4*C_a_u**3*C_a_v*Kmu*Kmv + 2*C_a_u**3*Kmfu*Kmv**2 + 2*C_a_u**3*Kmu*Kmv**2 + C_a_u**2*C_a_v**2*Kmfu**2 + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu + C_a_u**2*C_a_v**2*Kmu**2 + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv + 2*C_a_u**2*C_a_v*Kmu**2*Kmv + C_a_u**2*Kmfu**2*Kmv**2 + 4*C_a_u**2*Kmfu*Kmu*Kmv**2 + C_a_u**2*Kmu**2*Kmv**2 + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2 + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2 + 2*C_a_u*Kmfu*Kmu**2*Kmv**2 + C_a_v**2*Kmfu**2*Kmu**2 + 2*C_a_v*Kmfu**2*Kmu**2*Kmv + Kmfu**2*Kmu**2*Kmv**2) *24
+# Constant =  (2*C_a_u**4*C_a_v*Kmv*Vmu*rq + C_a_u**4*Kmv**2*Vmu*rq + 2*C_a_u**3*C_a_v**2*Kmfu*Vmfv + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmfv + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmu*rq + C_a_u**3*C_a_v*Kmu*Kmv*Vmu*rq + 2*C_a_u**3*Kmfu*Kmv**2*Vmfv + 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq + C_a_u**2*C_a_v**2*Kmfu**2*Vmfv + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu*Vmfv + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmfv + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmu*rq + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmfv + 2*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmu*rq + C_a_u**2*Kmfu**2*Kmv**2*Vmfv + C_a_u**2*Kmfu**2*Kmv**2*Vmu*rq + 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu*Vmfv + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2*Vmfv + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmfv + C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmu*rq + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv*Vmfv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2*Vmfv + 2*C_a_u*Kmfu*Kmu**2*Kmv**2*Vmfv + C_a_v**2*Kmfu**2*Kmu**2*Vmfv + 2*C_a_v*Kmfu**2*Kmu**2*Kmv*Vmfv + Kmfu**2*Kmu**2*Kmv**2*Vmfv)/(24*(C_a_u**4*C_a_v**2 + 2*C_a_u**4*C_a_v*Kmv + C_a_u**4*Kmv**2 + 2*C_a_u**3*C_a_v**2*Kmfu + 2*C_a_u**3*C_a_v**2*Kmu + 4*C_a_u**3*C_a_v*Kmfu*Kmv + 4*C_a_u**3*C_a_v*Kmu*Kmv + 2*C_a_u**3*Kmfu*Kmv**2 + 2*C_a_u**3*Kmu*Kmv**2 + C_a_u**2*C_a_v**2*Kmfu**2 + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu + C_a_u**2*C_a_v**2*Kmu**2 + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv + 2*C_a_u**2*C_a_v*Kmu**2*Kmv + C_a_u**2*Kmfu**2*Kmv**2 + 4*C_a_u**2*Kmfu*Kmu*Kmv**2 + C_a_u**2*Kmu**2*Kmv**2 + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2 + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2 + 2*C_a_u*Kmfu*Kmu**2*Kmv**2 + C_a_v**2*Kmfu**2*Kmu**2 + 2*C_a_v*Kmfu**2*Kmu**2*Kmv + Kmfu**2*Kmu**2*Kmv**2))
+
+
+#num = 2*C_a_u**4*C_a_v*Kmv*Vmu*rq + C_a_u**4*Kmv**2*Vmu*rq + 2*C_a_u**3*C_a_v**2*Kmfu*Vmfv + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmfv + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmu*rq + C_a_u**3*C_a_v*Kmu*Kmv*Vmu*rq + 2*C_a_u**3*Kmfu*Kmv**2*Vmfv + 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq + C_a_u**2*C_a_v**2*Kmfu**2*Vmfv + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu*Vmfv + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmfv + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmu*rq + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmfv + 2*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmu*rq + C_a_u**2*Kmfu**2*Kmv**2*Vmfv + C_a_u**2*Kmfu**2*Kmv**2*Vmu*rq + 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu*Vmfv + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2*Vmfv + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmfv + C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmu*rq + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv*Vmfv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2*Vmfv + 2*C_a_u*Kmfu*Kmu**2*Kmv**2*Vmfv + C_a_v**2*Kmfu**2*Kmu**2*Vmfv + 2*C_a_v*Kmfu**2*Kmu**2*Kmv*Vmfv + Kmfu**2*Kmu**2*Kmv**2*Vmfv
+
+#denom = 24*(C_a_u**4*C_a_v**2 + 2*C_a_u**4*C_a_v*Kmv + C_a_u**4*Kmv**2 + 2*C_a_u**3*C_a_v**2*Kmfu + 2*C_a_u**3*C_a_v**2*Kmu + 4*C_a_u**3*C_a_v*Kmfu*Kmv + 4*C_a_u**3*C_a_v*Kmu*Kmv + 2*C_a_u**3*Kmfu*Kmv**2 + 2*C_a_u**3*Kmu*Kmv**2 + C_a_u**2*C_a_v**2*Kmfu**2 + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu + C_a_u**2*C_a_v**2*Kmu**2 + 2*C_a_u**2*C_a_v*Kmfu**2*Kmv + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv + 2*C_a_u**2*C_a_v*Kmu**2*Kmv + C_a_u**2*Kmfu**2*Kmv**2 + 4*C_a_u**2*Kmfu*Kmu*Kmv**2 + C_a_u**2*Kmu**2*Kmv**2 + 2*C_a_u*C_a_v**2*Kmfu**2*Kmu + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2 + 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv + 2*C_a_u*Kmfu**2*Kmu*Kmv**2 + 2*C_a_u*Kmfu*Kmu**2*Kmv**2 + C_a_v**2*Kmfu**2*Kmu**2 + 2*C_a_v*Kmfu**2*Kmu**2*Kmv + Kmfu**2*Kmu**2*Kmv**2)
 
 
 
 #listing them
-#num_l = [3*C_a_u**4*C_a_v*Kmv*Vmu*rq , C_a_u**4*Kmv**2*Vmu*rq , 2*C_a_u**3*C_a_v**2*Kmfu*Vmfv , 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmfv , 6*C_a_u**3*C_a_v*Kmfu*Kmv*Vmu*rq , C_a_u**3*C_a_v*Kmu*Kmv*Vmu*rq , 2*C_a_u**3*Kmfu*Kmv**2*Vmfv , 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq ,- C_a_u**3*Kmu*Kmv**2*Vmu*rq , C_a_u**2*C_a_v**2*Kmfu**2*Vmfv , 4*C_a_u**2*C_a_v**2*Kmfu*Kmu*Vmfv , 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmfv , 3*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmu*rq , 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmfv , 2*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmu*rq , C_a_u**2*Kmfu**2*Kmv**2*Vmfv , C_a_u**2*Kmfu**2*Kmv**2*Vmu*rq , 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv ,- 2*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmu*rq , 2*C_a_u*C_a_v**2*Kmfu**2*Kmu*Vmfv , 2*C_a_u*C_a_v**2*Kmfu*Kmu**2*Vmfv , 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmfv , C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmu*rq , 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv*Vmfv , 2*C_a_u*Kmfu**2*Kmu*Kmv**2*Vmfv ,- C_a_u*Kmfu**2*Kmu*Kmv**2*Vmu*rq , 2*C_a_u*Kmfu*Kmu**2*Kmv**2*Vmfv , C_a_v**2*Kmfu**2*Kmu**2*Vmfv , 2*C_a_v*Kmfu**2*Kmu**2*Kmv*Vmfv , Kmfu**2*Kmu**2*Kmv**2*Vmfv]
-#denom_l  =[C_a_u**4*C_a_v**2,  2*C_a_u**4*C_a_v*Kmv , C_a_u**4*Kmv**2 , 2*C_a_u**3*C_a_v**2*Kmfu , 2*C_a_u**3*C_a_v**2*Kmu , 4*C_a_u**3*C_a_v*Kmfu*Kmv , 4*C_a_u**3*C_a_v*Kmu*Kmv , 2*C_a_u**3*Kmfu*Kmv**2 , 2*C_a_u**3*Kmu*Kmv**2, C_a_u**2*C_a_v**2*Kmfu**2 , 4*C_a_u**2*C_a_v**2*Kmfu*Kmu , C_a_u**2*C_a_v**2*Kmu**2 , 2*C_a_u**2*C_a_v*Kmfu**2*Kmv , 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv , 2*C_a_u**2*C_a_v*Kmu**2*Kmv , C_a_u**2*Kmfu**2*Kmv**2 , 4*C_a_u**2*Kmfu*Kmu*Kmv**2 , C_a_u**2*Kmu**2*Kmv**2 , 2*C_a_u*C_a_v**2*Kmfu**2*Kmu , 2*C_a_u*C_a_v**2*Kmfu*Kmu**2 , 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv , 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv , 2*C_a_u*Kmfu**2*Kmu*Kmv**2 , 2*C_a_u*Kmfu*Kmu**2*Kmv**2 , C_a_v**2*Kmfu**2*Kmu**2 , 2*C_a_v*Kmfu**2*Kmu**2*Kmv , Kmfu**2*Kmu**2*Kmv**2]
+
+num_l = [2*C_a_u**4*C_a_v*Kmv*Vmu*rq, + C_a_u**4*Kmv**2*Vmu*rq ,+ 2*C_a_u**3*C_a_v**2*Kmfu*Vmfv,+ 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmfv, + 4*C_a_u**3*C_a_v*Kmfu*Kmv*Vmu*rq, + C_a_u**3*C_a_v*Kmu*Kmv*Vmu*rq ,+ 2*C_a_u**3*Kmfu*Kmv**2*Vmfv, + 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq ,+ C_a_u**2*C_a_v**2*Kmfu**2*Vmfv ,+ 4*C_a_u**2*C_a_v**2*Kmfu*Kmu*Vmfv ,+ 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmfv ,+ 2*C_a_u**2*C_a_v*Kmfu**2*Kmv*Vmu*rq, + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmfv ,+ 2*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv*Vmu*rq, + C_a_u**2*Kmfu**2*Kmv**2*Vmfv, + C_a_u**2*Kmfu**2*Kmv**2*Vmu*rq, + 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv,+ 2*C_a_u*C_a_v**2*Kmfu**2*Kmu*Vmfv, + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2*Vmfv ,+ 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmfv ,+ C_a_u*C_a_v*Kmfu**2*Kmu*Kmv*Vmu*rq, + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv*Vmfv ,+ 2*C_a_u*Kmfu**2*Kmu*Kmv**2*Vmfv ,+ 2*C_a_u*Kmfu*Kmu**2*Kmv**2*Vmfv, + C_a_v**2*Kmfu**2*Kmu**2*Vmfv, + 2*C_a_v*Kmfu**2*Kmu**2*Kmv*Vmfv ,+ Kmfu**2*Kmu**2*Kmv**2*Vmfv]
+
+denom_l  =[C_a_u**4*C_a_v**2, + 2*C_a_u**4*C_a_v*Kmv ,+ C_a_u**4*Kmv**2, + 2*C_a_u**3*C_a_v**2*Kmfu ,+ 2*C_a_u**3*C_a_v**2*Kmu ,+ 4*C_a_u**3*C_a_v*Kmfu*Kmv ,+ 4*C_a_u**3*C_a_v*Kmu*Kmv, + 2*C_a_u**3*Kmfu*Kmv**2, + 2*C_a_u**3*Kmu*Kmv**2, + C_a_u**2*C_a_v**2*Kmfu**2, + 4*C_a_u**2*C_a_v**2*Kmfu*Kmu, + C_a_u**2*C_a_v**2*Kmu**2 ,+ 2*C_a_u**2*C_a_v*Kmfu**2*Kmv, + 8*C_a_u**2*C_a_v*Kmfu*Kmu*Kmv, + 2*C_a_u**2*C_a_v*Kmu**2*Kmv ,+ C_a_u**2*Kmfu**2*Kmv**2 ,+ 4*C_a_u**2*Kmfu*Kmu*Kmv**2, + C_a_u**2*Kmu**2*Kmv**2 ,+ 2*C_a_u*C_a_v**2*Kmfu**2*Kmu, + 2*C_a_u*C_a_v**2*Kmfu*Kmu**2 ,+ 4*C_a_u*C_a_v*Kmfu**2*Kmu*Kmv, + 4*C_a_u*C_a_v*Kmfu*Kmu**2*Kmv, + 2*C_a_u*Kmfu**2*Kmu*Kmv**2 ,+ 2*C_a_u*Kmfu*Kmu**2*Kmv**2, + C_a_v**2*Kmfu**2*Kmu**2, + 2*C_a_v*Kmfu**2*Kmu**2*Kmv, + Kmfu**2*Kmu**2*Kmv**2]
+
+Bn = 10
+Wn = 0.01
+
+Bd = 8000
+Wd = 30
+
+fun(num_l,denom_l,Bn, Bd, Wn, Wd)
+
+num =  2*C_a_u**4*C_a_v*Kmv*Vmu*rq+ C_a_u**4*Kmv**2*Vmu*rq+ 2*C_a_u**3*Kmfu*Kmv**2*Vmfv+ 2*C_a_u**3*Kmfu*Kmv**2*Vmu*rq+ 4*C_a_u**2*Kmfu*Kmu*Kmv**2*Vmfv
+denom = C_a_u**4*Kmv**2+ 2*C_a_u**3*Kmfu*Kmv**2+ 2*C_a_u**3*Kmu*Kmv**2+ 4*C_a_u**2*Kmfu*Kmu*Kmv**2+ C_a_u**2*Kmu**2*Kmv**2
+
+print("numerator: ", sp.simplify(num) ) 
+print("denominator: ", sp.simplify(denom) ) 
+            
+'''
 
 
-### constant belonging to F_v
+### constant belonging to C1..3 V
 ########################################
 ########################################
 
-## calculating
-substitutionBest = [ (C_a_u, 8.49), (C_a_v, 0.0163), (Kmv, 27.2438), (Kmu, 0.4103), (Vmu, 0.0031717356019947854), (Vmfv,0.0010016037021638822), (Kmfu, 0.11), (rq,0.95)]
-substitutionWorst = [ (C_a_u, 0.9), (C_a_v, 0.31), (Kmv, 27.2438), (Kmu, 0.4103), (Vmu, 0.00021354264845612348) , (Vmfv,0.00014867742939012076), (Kmfu, 0.11), (rq,0.95)]
-i = 0
-tot_sum_numB = 0
-sum_needed_numB = 0
-tot_sum_numW = 0
-sum_needed_numW = 0
-actual_num = []
-actual_denom = []
-for elem in num_l:
-	i = i+1
-	ex =  elem 
-	B = ex.subs(substitutionBest)
-	W = ex.subs(substitutionWorst)
-	tot_sum_numB +=abs(B) 
-	tot_sum_numW += abs(W)
-	if( abs(B)>15 or abs(W) > 0.01): 
-		sum_needed_numB +=abs(B)
-		sum_needed_numW += abs(W)
-		actual_num.append(elem)
-		print("Best case: ",i ,B)
-		print("Worst case: ",i ,W)
-		print("=============================================")
 
-print("current fraction: \n", "Best: ", sum_needed_numB/tot_sum_numB, "Worst: ", sum_needed_numW/tot_sum_numW) 
 
-i = 0
-tot_sum_denomB = 0
-sum_needed_denomB = 0
-tot_sum_denomW = 0
-sum_needed_denomW = 0
-print("=============================================")
-print("=============================================")
-print("=============================================")
-for elem in denom_l:
-	i = i+1
-	ex =  elem 
-	B = ex.subs(substitutionBest)
-	W = ex.subs(substitutionWorst)
-	tot_sum_denomB += abs(B) 
-	tot_sum_denomW += abs(W) 
+T11 = -(3*C_a_u**2*C_a_v*Kmfu*Vmfv*r1 + C_a_u**2*C_a_v*Kmfu*Vmfv*r2 + C_a_u**2*C_a_v*Kmfu*Vmfv*r3 + 3*C_a_u**2*Kmfu*Kmv*Vmfv*r1 + C_a_u**2*Kmfu*Kmv*Vmfv*r2 + C_a_u**2*Kmfu*Kmv*Vmfv*r3 - 3*C_a_u**2*Kmu*Kmv*Vmu*r1*rq - C_a_u**2*Kmu*Kmv*Vmu*r2*rq - C_a_u**2*Kmu*Kmv*Vmu*r3*rq + 6*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1 + 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2 + 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3 + 6*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1 + 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2 + 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3 - 6*C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq - 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq - 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq + 3*C_a_v*Kmfu*Kmu**2*Vmfv*r1 + C_a_v*Kmfu*Kmu**2*Vmfv*r2 + C_a_v*Kmfu*Kmu**2*Vmfv*r3 - 3*Kmfu**2*Kmu*Kmv*Vmu*r1*rq - Kmfu**2*Kmu*Kmv*Vmu*r2*rq - Kmfu**2*Kmu*Kmv*Vmu*r3*rq + 3*Kmfu*Kmu**2*Kmv*Vmfv*r1 + Kmfu*Kmu**2*Kmv*Vmfv*r2 + Kmfu*Kmu**2*Kmv*Vmfv*r3)/(60*C_a_u**4*C_a_v + 60*C_a_u**4*Kmv + 120*C_a_u**3*C_a_v*Kmfu + 120*C_a_u**3*C_a_v*Kmu + 120*C_a_u**3*Kmfu*Kmv + 120*C_a_u**3*Kmu*Kmv + 60*C_a_u**2*C_a_v*Kmfu**2 + 240*C_a_u**2*C_a_v*Kmfu*Kmu + 60*C_a_u**2*C_a_v*Kmu**2 + 60*C_a_u**2*Kmfu**2*Kmv + 240*C_a_u**2*Kmfu*Kmu*Kmv + 60*C_a_u**2*Kmu**2*Kmv + 120*C_a_u*C_a_v*Kmfu**2*Kmu + 120*C_a_u*C_a_v*Kmfu*Kmu**2 + 120*C_a_u*Kmfu**2*Kmu*Kmv + 120*C_a_u*Kmfu*Kmu**2*Kmv + 60*C_a_v*Kmfu**2*Kmu**2 + 60*Kmfu**2*Kmu**2*Kmv)
+T12 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/120 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/120 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/120 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/120 - Kmfu*Kmu**2*Kmv*Vmfv*r1/60 - Kmfu*Kmu**2*Kmv*Vmfv*r2/60 - Kmfu*Kmu**2*Kmv*Vmfv*r3/120)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
+T13 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/120 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/60 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/120 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/30 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/120 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/60 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/120 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/60 - Kmfu*Kmu**2*Kmv*Vmfv*r1/60 - Kmfu*Kmu**2*Kmv*Vmfv*r2/120 - Kmfu*Kmu**2*Kmv*Vmfv*r3/60)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
 
-	if( abs(B)>10000 or abs(W) > 70): 
-		sum_needed_denomB +=abs(B) 
-		sum_needed_denomW += abs(W) 
-		actual_denom.append(elem)
-		print("Best case: ",i ,B)
-		print("Worst case: ",i ,W)
-		print("=============================================")
+T21 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/120 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/120 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/120 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/120 - Kmfu*Kmu**2*Kmv*Vmfv*r1/60 - Kmfu*Kmu**2*Kmv*Vmfv*r2/60 - Kmfu*Kmu**2*Kmv*Vmfv*r3/120)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
 
-print("current fraction: \n", "Best: ", sum_needed_denomB/tot_sum_denomB, "Worst: ", sum_needed_denomW/tot_sum_denomW) 
-##
-print("num : \n", actual_num, "\ndenom: \n", actual_denom)
+T22 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1 - 3*C_a_u**2*C_a_v*Kmfu*Vmfv*r2 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3 - C_a_u**2*Kmfu*Kmv*Vmfv*r1 - 3*C_a_u**2*Kmfu*Kmv*Vmfv*r2 - C_a_u**2*Kmfu*Kmv*Vmfv*r3 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq + 3*C_a_u**2*Kmu*Kmv*Vmu*r2*rq + C_a_u**2*Kmu*Kmv*Vmu*r3*rq - 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1 - 6*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2 - 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3 - 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1 - 6*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2 - 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3 + 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq + 6*C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq + 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq - C_a_v*Kmfu*Kmu**2*Vmfv*r1 - 3*C_a_v*Kmfu*Kmu**2*Vmfv*r2 - C_a_v*Kmfu*Kmu**2*Vmfv*r3 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq + 3*Kmfu**2*Kmu*Kmv*Vmu*r2*rq + Kmfu**2*Kmu*Kmv*Vmu*r3*rq - Kmfu*Kmu**2*Kmv*Vmfv*r1 - 3*Kmfu*Kmu**2*Kmv*Vmfv*r2 - Kmfu*Kmu**2*Kmv*Vmfv*r3)/(60*(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv))
+
+T23 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/120 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/60 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/120 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/30 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/120 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/60 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/120 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/60 - Kmfu*Kmu**2*Kmv*Vmfv*r1/120 - Kmfu*Kmu**2*Kmv*Vmfv*r2/60 - Kmfu*Kmu**2*Kmv*Vmfv*r3/60)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
+
+T31 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/120 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/60 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/120 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/30 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/120 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/60 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/120 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/60 - Kmfu*Kmu**2*Kmv*Vmfv*r1/60 - Kmfu*Kmu**2*Kmv*Vmfv*r2/120 - Kmfu*Kmu**2*Kmv*Vmfv*r3/60)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
+
+
+
+T32 = (-C_a_u**2*C_a_v*Kmfu*Vmfv*r1/120 - C_a_u**2*C_a_v*Kmfu*Vmfv*r2/60 - C_a_u**2*C_a_v*Kmfu*Vmfv*r3/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r1/120 - C_a_u**2*Kmfu*Kmv*Vmfv*r2/60 - C_a_u**2*Kmfu*Kmv*Vmfv*r3/60 + C_a_u**2*Kmu*Kmv*Vmu*r1*rq/120 + C_a_u**2*Kmu*Kmv*Vmu*r2*rq/60 + C_a_u**2*Kmu*Kmv*Vmu*r3*rq/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1/60 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2/30 - C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1/60 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2/30 - C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq/60 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq/30 + C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq/30 - C_a_v*Kmfu*Kmu**2*Vmfv*r1/120 - C_a_v*Kmfu*Kmu**2*Vmfv*r2/60 - C_a_v*Kmfu*Kmu**2*Vmfv*r3/60 + Kmfu**2*Kmu*Kmv*Vmu*r1*rq/120 + Kmfu**2*Kmu*Kmv*Vmu*r2*rq/60 + Kmfu**2*Kmu*Kmv*Vmu*r3*rq/60 - Kmfu*Kmu**2*Kmv*Vmfv*r1/120 - Kmfu*Kmu**2*Kmv*Vmfv*r2/60 - Kmfu*Kmu**2*Kmv*Vmfv*r3/60)/(C_a_u**4*C_a_v + C_a_u**4*Kmv + 2*C_a_u**3*C_a_v*Kmfu + 2*C_a_u**3*C_a_v*Kmu + 2*C_a_u**3*Kmfu*Kmv + 2*C_a_u**3*Kmu*Kmv + C_a_u**2*C_a_v*Kmfu**2 + 4*C_a_u**2*C_a_v*Kmfu*Kmu + C_a_u**2*C_a_v*Kmu**2 + C_a_u**2*Kmfu**2*Kmv + 4*C_a_u**2*Kmfu*Kmu*Kmv + C_a_u**2*Kmu**2*Kmv + 2*C_a_u*C_a_v*Kmfu**2*Kmu + 2*C_a_u*C_a_v*Kmfu*Kmu**2 + 2*C_a_u*Kmfu**2*Kmu*Kmv + 2*C_a_u*Kmfu*Kmu**2*Kmv + C_a_v*Kmfu**2*Kmu**2 + Kmfu**2*Kmu**2*Kmv)
+
+
+T33 = -(C_a_u**2*C_a_v*Kmfu*Vmfv*r1 + C_a_u**2*C_a_v*Kmfu*Vmfv*r2 + 3*C_a_u**2*C_a_v*Kmfu*Vmfv*r3 + C_a_u**2*Kmfu*Kmv*Vmfv*r1 + C_a_u**2*Kmfu*Kmv*Vmfv*r2 + 3*C_a_u**2*Kmfu*Kmv*Vmfv*r3 - C_a_u**2*Kmu*Kmv*Vmu*r1*rq - C_a_u**2*Kmu*Kmv*Vmu*r2*rq - 3*C_a_u**2*Kmu*Kmv*Vmu*r3*rq + 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r1 + 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r2 + 6*C_a_u*C_a_v*Kmfu*Kmu*Vmfv*r3 + 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r1 + 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r2 + 6*C_a_u*Kmfu*Kmu*Kmv*Vmfv*r3 - 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r1*rq - 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*r2*rq - 6*C_a_u*Kmfu*Kmu*Kmv*Vmu*r3*rq + C_a_v*Kmfu*Kmu**2*Vmfv*r1 + C_a_v*Kmfu*Kmu**2*Vmfv*r2 + 3*C_a_v*Kmfu*Kmu**2*Vmfv*r3 - Kmfu**2*Kmu*Kmv*Vmu*r1*rq - Kmfu**2*Kmu*Kmv*Vmu*r2*rq - 3*Kmfu**2*Kmu*Kmv*Vmu*r3*rq + Kmfu*Kmu**2*Kmv*Vmfv*r1 + Kmfu*Kmu**2*Kmv*Vmfv*r2 + 3*Kmfu*Kmu**2*Kmv*Vmfv*r3)/(60*C_a_u**4*C_a_v + 60*C_a_u**4*Kmv + 120*C_a_u**3*C_a_v*Kmfu + 120*C_a_u**3*C_a_v*Kmu + 120*C_a_u**3*Kmfu*Kmv + 120*C_a_u**3*Kmu*Kmv + 60*C_a_u**2*C_a_v*Kmfu**2 + 240*C_a_u**2*C_a_v*Kmfu*Kmu + 60*C_a_u**2*C_a_v*Kmu**2 + 60*C_a_u**2*Kmfu**2*Kmv + 240*C_a_u**2*Kmfu*Kmu*Kmv + 60*C_a_u**2*Kmu**2*Kmv + 120*C_a_u*C_a_v*Kmfu**2*Kmu + 120*C_a_u*C_a_v*Kmfu*Kmu**2 + 120*C_a_u*Kmfu**2*Kmu*Kmv + 120*C_a_u*Kmfu*Kmu**2*Kmv + 60*C_a_v*Kmfu**2*Kmu**2 + 60*Kmfu**2*Kmu**2*Kmv)
+
+
+
+
+
+c = sp.simplify(T11/(3*r1 + r2 + r3))*60
+'''
+print('result: \n', sp.simplify(T11/c))
+print('result: \n', sp.simplify(T12/c))
+print('result: \n ', sp.simplify(T13/c) ) 
+print('result: \n', sp.simplify(T21/c))
+print('result: \n', sp.simplify(T22/c))
+print('result: \n ', sp.simplify(T23/c) )
+print('result: \n', sp.simplify(T31/c))
+print('result: \n', sp.simplify(T32/c))
+print('result: \n ', sp.simplify(T33/c) )
+'''
+#print('Constant k: \n', sp.simplify(c) ,'\n')
+num_l = [-C_a_u**2*C_a_v*Kmfu*Vmfv, - C_a_u**2*Kmfu*Kmv*Vmfv, + C_a_u**2*Kmu*Kmv*Vmu*rq, - 2*C_a_u*C_a_v*Kmfu*Kmu*Vmfv, - 2*C_a_u*Kmfu*Kmu*Kmv*Vmfv,+ 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*rq ,- C_a_v*Kmfu*Kmu**2*Vmfv ,+ Kmfu**2*Kmu*Kmv*Vmu*rq ,- Kmfu*Kmu**2*Kmv*Vmfv]
+
+denom_l = [C_a_u**4*C_a_v, + C_a_u**4*Kmv ,+ 2*C_a_u**3*C_a_v*Kmfu ,+ 2*C_a_u**3*C_a_v*Kmu, + 2*C_a_u**3*Kmfu*Kmv ,+ 2*C_a_u**3*Kmu*Kmv ,+ C_a_u**2*C_a_v*Kmfu**2 ,+ 4*C_a_u**2*C_a_v*Kmfu*Kmu, + C_a_u**2*C_a_v*Kmu**2 ,+ C_a_u**2*Kmfu**2*Kmv ,+ 4*C_a_u**2*Kmfu*Kmu*Kmv ,+ C_a_u**2*Kmu**2*Kmv ,+ 2*C_a_u*C_a_v*Kmfu**2*Kmu ,+ 2*C_a_u*C_a_v*Kmfu*Kmu**2, + 2*C_a_u*Kmfu**2*Kmu*Kmv, + 2*C_a_u*Kmfu*Kmu**2*Kmv ,+ C_a_v*Kmfu**2*Kmu**2 ,+ Kmfu**2*Kmu**2*Kmv]
+
+Bn = 10**(-3)
+Wn = 10**(-5)
+
+Bd = 100
+Wd = 0.2
+
+fun(num_l,denom_l,Bn, Bd, Wn, Wd)
+
+numerator = sp.simplify(-C_a_u**2*Kmfu*Kmv*Vmfv+ C_a_u**2*Kmu*Kmv*Vmu*rq -2*C_a_u*Kmfu*Kmu*Kmv*Vmfv+ 2*C_a_u*Kmfu*Kmu*Kmv*Vmu*rq +  Kmfu**2*Kmu*Kmv*Vmu*rq -Kmfu*Kmu**2*Kmv*Vmfv);
+denominator = sp.simplify(C_a_u**4*C_a_v+ C_a_u**4*Kmv+ 2*C_a_u**3*Kmfu*Kmv+ 2*C_a_u**3*Kmu*Kmv+ C_a_u**2*Kmfu**2*Kmv+ 4*C_a_u**2*Kmfu*Kmu*Kmv+ C_a_u**2*Kmu**2*Kmv+2*C_a_u*Kmfu**2*Kmu*Kmv+ 2*C_a_u*Kmfu*Kmu**2*Kmv);
+
+print("\n numerator: ", numerator, '\n' ) 
+print("denominator: ", denominator, '\n' ) 
+'''
+### constant belonging to CM1..M3 V
+########################################
+########################################
+T21 = -C_a_u*Kmv*Vmu*rq*(3*r1 + r2 + r3)/(60*C_a_u*C_a_v**2 + 120*C_a_u*C_a_v*Kmv + 60*C_a_u*Kmv**2 + 60*C_a_v**2*Kmu + 120*C_a_v*Kmu*Kmv + 60*Kmu*Kmv**2)
+
+
+T22 = -C_a_u*Kmv*Vmu*rq*(2*r1 + 2*r2 + r3)/(120*C_a_u*C_a_v**2 + 240*C_a_u*C_a_v*Kmv + 120*C_a_u*Kmv**2 + 120*C_a_v**2*Kmu + 240*C_a_v*Kmu*Kmv + 120*Kmu*Kmv**2)
+
+T23 = -C_a_u*Kmv*Vmu*rq*(2*r1 + r2 + 2*r3)/(120*C_a_u*C_a_v**2 + 240*C_a_u*C_a_v*Kmv + 120*C_a_u*Kmv**2 + 120*C_a_v**2*Kmu + 240*C_a_v*Kmu*Kmv + 120*Kmu*Kmv**2)
+
+c = sp.simplify(T21/(3*r1 + r2 + r3))
+print('c : ', sp.simplify(c))
+
+const = -C_a_u*Kmv*Vmu*rq/(C_a_u*C_a_v**2 + 2*C_a_u*C_a_v*Kmv + C_a_u*Kmv**2 + C_a_v**2*Kmu + 2*C_a_v*Kmu*Kmv + Kmu*Kmv**2)
+
+
+
+'''
+#print('result: \n', sp.simplify(T11/c))
+#print('result: \n', sp.simplify(T12/c))
+#print('lets test: \n ', sp.simplify(T13/c) )
+
+
 # C_a = 9 -> 0.9
 # C_v = 0.01 -> 2
 # Kmv = 27
@@ -187,8 +291,6 @@ print("num : \n", actual_num, "\ndenom: \n", actual_denom)
 #print('lets test: ', sp.simplify(T31/c) ) 
 #trial = (C_a_u +Kmu)*(C_a_v + Kmv)**2
 #print('trial: ', sp.simplify(trial*c))
-
-
 
 
 
