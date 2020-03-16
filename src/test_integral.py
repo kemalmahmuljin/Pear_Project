@@ -39,7 +39,7 @@ phi_1 = 1-e-n
 phi_2 = e
 phi_3 = n
 r = r1 + (r2-r1)*e + (r3-r1)*n
-
+'''
 g_p1 = grad(phi_1, [e, n])
 g_p2 = grad(phi_2, [e, n])
 g_p3 = grad(phi_3, [e, n])
@@ -62,7 +62,7 @@ elem_matrix3 = elem_matrix3.col_insert(2, sp.Matrix(integral*sig_m*g_p3).T*g_p3)
 
 elem_matrix = elem_matrix1.row_insert(1, elem_matrix2)
 elem_matrix = elem_matrix.row_insert(2, elem_matrix3)
-
+'''
 
 
 
@@ -75,7 +75,7 @@ Cv = c_v1*phi_1+c_v2*phi_2+c_v3*phi_3
 
 Ru = Vmu/(1+Cv/Kmv) 
 Rv = rq*Ru + Vmfv/(1+Cu/Kmfu)
-
+'''
 Ru_comp = Ru*Cu/(Kmu+Cu)
 Rv_comp = rq*Ru_comp + Vmfv/(1+Cu/Kmfu)
 
@@ -114,7 +114,7 @@ equil_2_u = sp.simplify(sp.integrate(sp.integrate(equil_2_u,
     (n, 0, 1-e)), (e, 0, 1)))
 equil_3_u = sp.simplify(sp.integrate(sp.integrate(equil_3_u, 
     (n, 0, 1-e)), (e, 0, 1)))
-
+'''
 ############################################################################
 #### I TRY SOMETHING
 ############################################################################
@@ -125,34 +125,37 @@ phiis = [phi_1, phi_2, phi_3] ## iterating over rows
 for phii in phiis:
 	#### IMPLEMENTING Ru
 
-	# Delta_c1..c3
-	denom = ( (Kmu + C_a_u)**2 )* (Kmv + C_a_v)
-	Dc1_u = r*Vmu*Kmu*Kmv*phi_1*phii/denom
-	Dc2_u = r*Vmu*Kmu*Kmv*phi_2*phii/denom
-	Dc3_u = r*Vmu*Kmu*Kmv*phi_3*phii/denom
-	# Delta_cM1..cM3
-	denom2 = (Kmu+C_a_u)*( (Kmv + C_a_v)**2 )
-	DcM1_u = -r*Vmu*Kmv*C_a_u*phi_1*phii/denom2
-	DcM2_u = -r*Vmu*Kmv*C_a_u*phi_2*phii/denom2
-	DcM3_u = -r*Vmu*Kmv*C_a_u*phi_3*phii/denom2
-	# Function_c1..c3..cM1..cM3
-	F = r*Vmu*Kmv*C_a_u*phii/( (Kmu+C_a_u)*(Kmv + C_a_v) )
-	# f-vector
-	integrand_f = F - (C_a_u*Dc1_u+C_a_u*Dc2_u+C_a_u*Dc3_u +C_a_v*DcM1_u+C_a_v*DcM2_u+C_a_v*DcM3_u)
-	int_f = sp.simplify( sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1))) ) 
+# Delta_c1..c3
+denom = ( (Kmu + C_a_u)**2 )* (Kmv + C_a_v)
+Dc1_u = r*Vmu*Kmu*Kmv*phi_1*phii/denom
+Dc2_u = r*Vmu*Kmu*Kmv*phi_2*phii/denom
+Dc3_u = r*Vmu*Kmu*Kmv*phi_3*phii/denom
+# Delta_cM1..cM3
+denom2 = (Kmu+C_a_u)*( (Kmv + C_a_v)**2 )
+DcM1_u = -r*Vmu*Kmv*C_a_u*phi_1*phii/denom2
+DcM2_u = -r*Vmu*Kmv*C_a_u*phi_2*phii/denom2
+DcM3_u = -r*Vmu*Kmv*C_a_u*phi_3*phii/denom2
+# Function_c1..c3..cM1..cM3
+F = r*Vmu*Kmv*C_a_u*phii/( (Kmu+C_a_u)*(Kmv + C_a_v) )
+# f-vector
+integrand_f = F - (C_a_u*Dc1_u+C_a_u*Dc2_u+C_a_u*Dc3_u +C_a_v*DcM1_u+C_a_v*DcM2_u+C_a_v*DcM3_u)
+int_f = sp.simplify( sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1))) ) 
+'''
+print(" R_U: F- vector for ", phii, " :\n")
+print(J*int_f)
+print("\n")
+'''
+# Gradient ( stiffness)
+
+int_c1 = J*sp.simplify( sp.integrate(sp.integrate(Dc1_u, (n, 0, 1-e)), (e, 0, 1)))
+int_c2 = J*sp.simplify( sp.integrate(sp.integrate(Dc2_u, (n, 0, 1-e)), (e, 0, 1)))
+int_c3 = J*sp.simplify( sp.integrate(sp.integrate(Dc3_u, (n, 0, 1-e)), (e, 0, 1)))
+int_cM1 = J*sp.simplify( sp.integrate(sp.integrate(DcM1_u, (n, 0, 1-e)), (e, 0, 1)))
+int_cM2 = J*sp.simplify( sp.integrate(sp.integrate(DcM2_u, (n, 0, 1-e)), (e, 0, 1)))
+int_cM3 = J*sp.simplify( sp.integrate(sp.integrate(DcM3_u, (n, 0, 1-e)), (e, 0, 1)))
 	'''
-	print(" R_U: F- vector for ", phii, " :\n")
-	print(J*int_f)
-	print("\n")
-	# Gradient ( stiffness)
-	
-	int_c1 = J*sp.simplify( sp.integrate(sp.integrate(Dc1_u, (n, 0, 1-e)), (e, 0, 1)))
-	int_c2 = J*sp.simplify( sp.integrate(sp.integrate(Dc2_u, (n, 0, 1-e)), (e, 0, 1)))
-	int_c3 = J*sp.simplify( sp.integrate(sp.integrate(Dc3_u, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM1 = J*sp.simplify( sp.integrate(sp.integrate(DcM1_u, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM2 = J*sp.simplify( sp.integrate(sp.integrate(DcM2_u, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM3 = J*sp.simplify( sp.integrate(sp.integrate(DcM3_u, (n, 0, 1-e)), (e, 0, 1)))
 	print(" R_U: Delta_c1..c3..cM1..cM3 vectors for ", phii, " :\n")
+	
 	print(int_c1)
 	print("\n")
 	print("----------------------------------------------------------------------------")
@@ -161,6 +164,7 @@ for phii in phiis:
 	print("----------------------------------------------------------------------------")
 	print(int_c3)
 	print("\n")
+
 	print("----------------------------------------------------------------------------")
 	print(int_cM1)
 	print("\n")
@@ -174,30 +178,32 @@ for phii in phiis:
 	print("############################################################################")
 	'''
 	#### IMPLEMENTING Rv
+	
 	Dc1_v = rq*Dc1_u - r*Kmfu*Vmfv*phi_1*phii/( (Kmfu+C_a_u)**2 )	
 	Dc2_v = rq*Dc2_u - r*Kmfu*Vmfv*phi_2*phii/( (Kmfu+C_a_u)**2 )	
 	Dc3_v = rq*Dc3_u - r*Kmfu*Vmfv*phi_3*phii/( (Kmfu+C_a_u)**2 )
 	DcM1_v = rq*DcM1_u
 	DcM2_v = rq*DcM2_u
 	DcM3_v = rq*DcM3_u
-
-
-	'''
+	print(Dc1_v)
+	print("euh")
 	# Function_c1..c3..cM1..cM3
-	F = rq*F + r*Vmfv*Kmfu*phii/(Kmfu+C_a_u)
-	integrand_f = F -(C_a_u*Dc1_v+C_a_u*Dc2_v+C_a_u*Dc3_v+C_a_v*DcM1_v+C_a_v*DcM2_v+C_a_v*DcM3_v)
-	int_f =sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1)))
-	int_f = sp.simplify(int_f)
+	#F = rq*integrand_f + r*Vmfv*Kmfu*phii/(Kmfu+C_a_u)
+	#integrand_f = F -(C_a_u*Dc1_v+C_a_u*Dc2_v+C_a_u*Dc3_v+C_a_v*DcM1_v+C_a_v*DcM2_v+C_a_v*DcM3_v)
+	#int_f =sp.simplify( sp.integrate(sp.integrate(integrand_f, (n, 0, 1-e)), (e, 0, 1)))
+	#int_f = sp.simplify(int_f)
+	'''
 	print(" R_V: F- vector for ", phii, " :\n")
 	print(int_f)
 	print("\n")
 	'''
-	int_c1 =J*sp.simplify( sp.integrate(sp.integrate(Dc1_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_c2 =J*sp.simplify( sp.integrate(sp.integrate(Dc2_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_c3 =J*sp.simplify( sp.integrate(sp.integrate(Dc3_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM1 =J*sp.simplify( sp.integrate(sp.integrate(DcM1_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM2 =J*sp.simplify( sp.integrate(sp.integrate(DcM2_v, (n, 0, 1-e)), (e, 0, 1)))
-	int_cM3 =J*sp.simplify( sp.integrate(sp.integrate(DcM3_v, (n, 0, 1-e)), (e, 0, 1)))
+	int_c1 =sp.simplify( sp.integrate(sp.integrate(Dc1_v, (n, 0, 1-e)), (e, 0, 1)))
+	
+	int_c2 =sp.simplify( sp.integrate(sp.integrate(Dc2_v, (n, 0, 1-e)), (e, 0, 1)))
+	int_c3 =sp.simplify( sp.integrate(sp.integrate(Dc3_v, (n, 0, 1-e)), (e, 0, 1)))
+	#int_cM1 =J*sp.simplify( sp.integrate(sp.integrate(DcM1_v, (n, 0, 1-e)), (e, 0, 1)))
+	#int_cM2 =J*sp.simplify( sp.integrate(sp.integrate(DcM2_v, (n, 0, 1-e)), (e, 0, 1)))
+	#int_cM3 =J*sp.simplify( sp.integrate(sp.integrate(DcM3_v, (n, 0, 1-e)), (e, 0, 1)))
 	print(" R_V: Delta_c1..c3..cM1..cM3 vectors for ", phii, " :\n")
 	print(int_c1)
 	print("\n")
@@ -208,6 +214,7 @@ for phii in phiis:
 	print(int_c3)
 	print("\n")
 	print("----------------------------------------------------------------------------")
+	'''
 	print(int_cM1)
 	print("\n")
 	print("----------------------------------------------------------------------------")
@@ -218,9 +225,10 @@ for phii in phiis:
 	print("\n")
 	print("############################################################################")
 	print("############################################################################") 
-	
+	'''
 ############################################################################
 ############################################################################
+'''
 int_sim1_v = r*Rv*phi_1
 int_sim2_v = r*Rv*phi_2
 int_sim3_v = r*Rv*phi_3
@@ -269,3 +277,4 @@ s2 = sp.integrate(r*(Cu-C_a_u)*phi_2, (e, 0, 1))
 
 #f1 = sp.integrate(r*C_a_u*phi_1, (e, 0, 1))
 #f2 = sp.integrate(r*C_a_u*phi_2, (e, 0, 1))
+'''
