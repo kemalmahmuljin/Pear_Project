@@ -1,0 +1,97 @@
+m = size(elements,1);
+f = zeros(1,m);
+
+for i = 1 : m
+        %nodes
+        n1 = elements(i,1)+1;
+        n2 = elements(i,2)+1;
+        n3 = elements(i,3)+1;
+        % r1,r2,r3
+        r1 =  coords(n1,1);
+        r2 =  coords(n2,1);
+        r3 =  coords(n3,1);
+        % z1,z2,z3
+        z1 =  coords(n1,2);
+        z2 =  coords(n2,2);
+        z3 =  coords(n3,2);
+        %Jacobian
+        J = abs((r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1));
+        %% f vector
+        num =  C_U_AMB*K_MV*V_MU*(2*C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU);
+        den = 24 * (C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU + K_MU*K_MV)^2;
+        
+        k = num/den;
+        k = k*J;
+        
+        v1 = k*(2*r1 + r2 + r3);
+        v2 = k*(r1 + 2*r2 + r3);
+        v3 = k*(r1 + r2 + 2*r3);
+        
+        num = 2 * ((C_U_AMB^2) * C_V_AMB*V_MU*RESP_Q + (C_U_AMB^2) * K_MV*V_MU*RESP_Q + 2*C_U_AMB*K_MFU*K_MV*MAX_FERM_CO2 
+						+ 2*C_U_AMB*K_MFU*K_MV*V_MU*RESP_Q + 4*K_MFU*K_MU*K_MV*MAX_FERM_CO2);
+        
+        den = 24 * ((C_U_AMB^2)+ 2*C_U_AMB*K_MFU + 2*C_U_AMB*K_MU + 4*K_MFU*K_MU + K_MU^2);
+        
+        k = num/den;
+        k = k*J;
+                
+        v1 = k*(2*r1 + r2 + r3);
+        v2 = k*(r1 + 2*r2 + r3);
+        v3 = k*(r1 + r2 + 2*r3);
+        
+        f(n1) = f(n1) - v1;
+        f(n2) = f(n2) - v2;
+        f(n3) = f(n3) - v3;
+end
+
+%% coefficients
+c = -f\K;
+
+ %% epsilon,eta 
+ %%%%%%%%%%%%
+ %%%%%%%%%%%%
+ %%%%%%%%%%%%
+ 
+%% r_u, r_v
+r_u = V_MU*c_u/((K_MU + c_u)*(1 + c_v/K_MV));
+r_v = RESP_Q*r_u(coefficients, epsilon, eta) + 
+				MAX_FERM_CO2/(1 + c_u/K_MFU);
+                
+%% integrad u 
+u_vec = zeros(1,m);
+for i = 1:m
+            %nodes
+        n1 = elements(i,1)+1;
+        n2 = elements(i,2)+1;
+        n3 = elements(i,3)+1;
+        % r1,r2,r3
+        r1 =  coords(n1,1);
+        r2 =  coords(n2,1);
+        r3 =  coords(n3,1);
+        % z1,z2,z3
+        z1 =  coords(n1,2);
+        z2 =  coords(n2,2);
+        z3 =  coords(n3,2);
+        %Jacobian
+        J = abs((r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1));
+        
+    %%%%%%%%%%%% node_idx ? %%%%%%%%%%
+    if (node_idx == 1)
+        u_vec(n1) = (r1 + (r2 - r1)*u + (r3 - r1)*v)*r_u*phi_1(u, v)*J;
+    else if (node_idx == 2)
+        u_vec(n2) = (r1 + (r2 - r1)*u + (r3 - r1)*v)*r_u*phi_2(u, v)*J;
+    else if (node_idx == 3)
+        u_vec(n3) = (r1 + (r2 - r1)*u + (r3 - r1)*v)*r_u*phi_3(u, v)*J;
+          end
+        end
+    end
+    %% integrad v
+    if (node_idx == 1)
+        u_vec(n1) = (z1 + (z2 - z1)*u + (z3 - z1)*v)*r_v*phi_1(u, v)*J;
+    else if (node_idx == 2)
+        u_vec(n2) = (z1 + (z2 - z1)*u + (z3 - z1)*v)*r_v*phi_2(u, v)*J;
+    else if (node_idx == 3)
+        u_vec(n3) = (z1 + (z2 - z1)*u + (z3 - z1)*v)*r_v*phi_3(u, v)*J;
+          end
+        end
+    end
