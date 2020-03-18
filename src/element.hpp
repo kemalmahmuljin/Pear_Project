@@ -105,13 +105,14 @@ class ElementTriangular : public Element<P, I>{
 		 *	True: Counter-Clockwise order.
 		 *	False: Clockwise order.
 		*/
-		precision_t slope_1 = 
-			(coordinates[p_nodes[1]][1] - coordinates[p_nodes[0]][1])/
-			(coordinates[p_nodes[1]][0] - coordinates[p_nodes[0]][0]);
-		precision_t slope_2 = 
-			(coordinates[p_nodes[2]][1] - coordinates[p_nodes[1]][1])/
-			(coordinates[p_nodes[2]][0] - coordinates[p_nodes[1]][0]);
-		return (slope_1 < slope_2);
+		//precision_t slope_1 = 
+		//	(coordinates[p_nodes[1]][1] - coordinates[p_nodes[0]][1])/
+		//	(coordinates[p_nodes[1]][0] - coordinates[p_nodes[0]][0]);
+		//precision_t slope_2 = 
+		//	(coordinates[p_nodes[2]][1] - coordinates[p_nodes[1]][1])/
+		//	(coordinates[p_nodes[2]][0] - coordinates[p_nodes[1]][0]);
+		//return (slope_1 < slope_2);
+		return true;
 		}
 		
 		precision_t phi_1(precision_t epsilon, precision_t eta){
@@ -276,15 +277,18 @@ class ElementTriangular : public Element<P, I>{
 			precision_t c_v = c_v_1*p_1 + c_v_2*p_2 + c_v_3*p_3;
 			precision_t k = 0;
 			if (coef_idx < 4){
-				k = K_MU*K_MV*V_MU*(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)/
-					pow((K_MU  + c_u), 2)*(K_MV + c_v);
+				k = (V_MU*(K_MU + c_u)*(1 + c_v/K_MV) - 
+						V_MU*c_u*(1 + c_v/K_MV))/
+					pow((K_MU + c_u)*(1 + c_v/K_MV), 2);
 			}
 			else{
-				k = -K_MU*V_MU*(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)*c_u/
-					(K_MU + c_u)*pow((K_MV + c_v), 2);
+				k = -(V_MU*c_u)*(K_MU + c_u)/
+					(K_MV*pow((K_MU + c_u)*(1 + c_v/K_MV), 2));
+				
 			}
 			return k*phi(epsilon, eta, node_idx+1)*phi(epsilon, eta, 
-					coef_idx%3 + 1);
+					coef_idx%3 + 1)*jacobian(coordinates)*(
+						r1 + (r2 - r1)*epsilon + (r3 - r1)*eta);
 		}
 
 		precision_t diff_integrand_v(precision_t epsilon, precision_t eta, 
@@ -311,64 +315,24 @@ class ElementTriangular : public Element<P, I>{
 					(size_t)this->nodes_[1] + NUM_NODES);
 			precision_t c_v_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2] + NUM_NODES);
-			precision_t c_u = c_u_1*p_1 + c_u_2*p_2+c_u_3*p_3;
-			precision_t c_v = c_v_1*p_1 + c_v_2*p_2+c_v_3*p_3;
+			precision_t c_u = c_u_1*p_1 + c_u_2*p_2 + c_u_3*p_3;
+			precision_t c_v = c_v_1*p_1 + c_v_2*p_2 + c_v_3*p_3;
 			precision_t k = 0;
 			if (coef_idx < 4){
-				k = -(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)*
-					(K_MFU*MAX_FERM_CO2*pow((K_MU + c_u), 2)*(K_MV + c_v) +
-					K_MV*V_MU*RESP_Q*c_u*pow((K_MFU + c_u), 2) -
-					K_MV*V_MU*RESP_Q*pow((K_MFU + c_u), 2)*(K_MU + c_u))/
-					(pow((K_MFU + c_u), 2)*pow((K_MU + c_u), 2)*
-					(K_MV + c_v));
+				k = RESP_Q*(V_MU*(K_MU + c_u)*(1 + c_v/K_MV) - 
+						V_MU*c_u*(1 + c_v/K_MV))/
+					pow((K_MU + c_u)*(1 + c_v/K_MV), 2) - 
+					MAX_FERM_CO2/(K_MFU*pow((1 + c_u/K_MFU), 2));
 			}
 			else{
-				k = -K_MV*V_MU*RESP_Q*
-					(r1 + (r2 - r1)*epsilon + (r3 - r1)*eta)
-					/((K_MU + c_u)*pow((K_MV + c_v), 2));
+				k = -RESP_Q*(V_MU*c_u)*(K_MU + c_u)/
+					(K_MV*pow((K_MU + c_u)*(1 + c_v/K_MV), 2));
+				
 			}
 			return k*phi(epsilon, eta, node_idx+1)*phi(epsilon, eta, 
-					coef_idx%3 + 1);
+					coef_idx%3 + 1)*jacobian(coordinates)*(
+						r1 + (r2 - r1)*epsilon + (r3 - r1)*eta);
 		}
-
-		//int integrate_non_linear_term(const gsl_vector* coefficients,
-		//		const std::vector<std::vector<precision_t>>& coordinates,
-		//		size_t points, gsl_vector* result_vector){
-		//	gsl_integration_glfixed_table* table = 
-		//		gsl_integration_glfixed_table_alloc(points);
-		//	precision_t u;
-		//	precision_t v;
-		//	precision_t w_i;
-		//	precision_t w_j;
-		//	precision_t result_u;
-		//	precision_t result_v;
-		//	int phi_idx = 1;
-		//	for (int node_idx = 0; node_idx < 3; node_idx++){
-		//		result_u = 0;
-		//		result_v = 0;
-		//		for (size_t i = 0; i < points; i++){
-		//			gsl_integration_glfixed_point(0, 1, i, &u, &w_i, table);
-		//			for (size_t j = 0; j < points; j++){
-		//				gsl_integration_glfixed_point(0, 1, j, &v, &w_j, table);
-		//				result_u += w_j*w_i*integrand_u(u, v/(1 - u), 
-		//						coefficients, coordinates, phi_idx)*(1 - u);
-		//				result_v += w_j*w_i*integrand_v(u, v/(1 - u), 
-		//						coefficients, coordinates, phi_idx)*(1 - u);
-		//			}
-		//		}
-		//		gsl_vector_set(result_vector, 
-		//				(size_t)(this->nodes_[node_idx]), 
-		//				gsl_vector_get(result_vector, 
-		//					(size_t)(this->nodes_[node_idx])) + result_u);
-		//		gsl_vector_set(result_vector, 
-		//				(size_t)(this->nodes_[node_idx] + NUM_NODES), 
-		//				gsl_vector_get(result_vector, 
-		//					(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
-		//				result_v);
-		//		phi_idx++;
-		//	}
-		//	return EXIT_SUCCESS;
-		//}
 
 		int integrate_non_linear_term_2(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
@@ -441,7 +405,7 @@ class ElementTriangular : public Element<P, I>{
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 				node_1 = this->nodes_[node_idx];	
 				node_2 = this->nodes_[coeff_idx - 1];	
-				result_uu = jacobian(coordinates)*(
+				result_uu = (
 					diff_integrand_u(0.5, 0, coefficients, coordinates,
 						node_idx, coeff_idx) + 
 					diff_integrand_u(0, 0.5, coefficients, coordinates,
@@ -450,7 +414,7 @@ class ElementTriangular : public Element<P, I>{
 						node_idx, coeff_idx)
 					)/6;
 
-				result_uv = jacobian(coordinates)*(
+				result_uv = (
 					diff_integrand_u(0.5, 0, coefficients, coordinates,
 						node_idx, coeff_idx + 3) + 
 					diff_integrand_u(0, 0.5, coefficients, coordinates,
@@ -459,7 +423,7 @@ class ElementTriangular : public Element<P, I>{
 						node_idx, coeff_idx + 3)
 					)/6;
 
-				result_vu = jacobian(coordinates)*(
+				result_vu = (
 					diff_integrand_v(0.5, 0, coefficients, coordinates,
 						node_idx, coeff_idx) + 
 					diff_integrand_v(0, 0.5, coefficients, coordinates,
@@ -468,7 +432,7 @@ class ElementTriangular : public Element<P, I>{
 						node_idx, coeff_idx)
 					)/6;
 
-				result_vv = jacobian(coordinates)*(
+				result_vv = (
 					diff_integrand_v(0.5, 0, coefficients, coordinates,
 						node_idx, coeff_idx + 3) + 
 					diff_integrand_v(0, 0.5, coefficients, coordinates,
@@ -491,6 +455,75 @@ class ElementTriangular : public Element<P, I>{
 				gsl_matrix_set(result_matrix, 
 						node_1 + NUM_NODES, node_2 + NUM_NODES, 
 						gsl_matrix_get(result_matrix, node_1 + NUM_NODES, 
+							node_2 + NUM_NODES) - result_vv);
+				} 
+			}
+			return EXIT_SUCCESS;
+		}
+		
+		int update_sp_with_jacobian(const gsl_vector* coefficients,
+				const std::vector<std::vector<precision_t>>& coordinates,
+				gsl_spmatrix* result_matrix){
+			precision_t result_uu;
+			precision_t result_uv;
+			precision_t result_vu;
+			precision_t result_vv;
+			size_t node_1;
+			size_t node_2;
+			for (int node_idx = 0; node_idx < 3; node_idx++){
+				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
+				node_1 = this->nodes_[node_idx];	
+				node_2 = this->nodes_[coeff_idx - 1];	
+				result_uu = (
+					diff_integrand_u(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx) + 
+					diff_integrand_u(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx) +
+					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx)
+					)/6;
+
+				result_uv = (
+					diff_integrand_u(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx + 3) + 
+					diff_integrand_u(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3) +
+					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3)
+					)/6;
+
+				result_vu = (
+					diff_integrand_v(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx) + 
+					diff_integrand_v(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx) +
+					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx)
+					)/6;
+
+				result_vv = (
+					diff_integrand_v(0.5, 0, coefficients, coordinates,
+						node_idx, coeff_idx + 3) + 
+					diff_integrand_v(0, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3) +
+					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+						node_idx, coeff_idx + 3)
+					)/6;
+
+				gsl_spmatrix_set(result_matrix, 
+						node_1, node_2, gsl_spmatrix_get(result_matrix, 
+							node_1, node_2) + result_uu);
+				gsl_spmatrix_set(result_matrix, 
+						node_1, node_2 + NUM_NODES, 
+						gsl_spmatrix_get(result_matrix, node_1, 
+							node_2 + NUM_NODES) + result_uv);
+				gsl_spmatrix_set(result_matrix, 
+						node_1 + NUM_NODES, node_2, gsl_spmatrix_get(
+							result_matrix, node_1 + NUM_NODES, node_2) - 
+						result_vu);
+				gsl_spmatrix_set(result_matrix, 
+						node_1 + NUM_NODES, node_2 + NUM_NODES, 
+						gsl_spmatrix_get(result_matrix, node_1 + NUM_NODES, 
 							node_2 + NUM_NODES) - result_vv);
 				} 
 			}
@@ -567,212 +600,280 @@ class ElementTriangular : public Element<P, I>{
 
 			return EXIT_SUCCESS;
 		}
-
 		int update_stiffness_with_linearized_integral(
 				const std::vector<std::vector<precision_t>>& coordinates,
 				stiff_mat_t& global_stiffness){
-
-			node_t n_1 = this->nodes_[0];
-			node_t n_2 = this->nodes_[1];
-			node_t n_3 = this->nodes_[2];
-			precision_t r1 = coordinates[n_1][0];
-			precision_t r2 = coordinates[n_2][0];
-			precision_t r3 = coordinates[n_3][0];
-			
-
-
-// THIS IS FOR Cu's
-
-			precision_t k = K_MU*K_MV*V_MU/( std::pow(C_U_AMB + K_MU,2)*(C_V_AMB + K_MV) );
-			k = k*jacobian(coordinates);
-			precision_t s11 = (3*r1 + r2 + r3)*k/60;
-			precision_t s12 = (2*r1 + 2*r2 + r3)*k/120;
-			precision_t s13 = (2*r1 + r2 + 2*r3)*k/120;
-
-			precision_t s21 = (2*r1 + 2*r2 + r3)*k/120;
-			precision_t s22 = (r1 + 3*r2 + r3)*k/60;
-			precision_t s23 = (r1 + 2*r2 + 2*r3)*k/120;
-			
-			precision_t s31 = (2*r1 + r2 + 2*r3)*k/120;
-			precision_t s32 = (r1 + 2*r2 + 2*r3)*k/120;
-			precision_t s33 = (r1 + r2 + 3*r3)*k/60;
-
-			gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_1)
-					+ s11);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_2, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_2)
-					+ s12);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_3, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_3)
-					+ s13);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_1, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_1)
-					+ s21);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_2, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_2)
-					+ s22);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_3, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_3)
-					+ s23);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_1, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_1)
-					+ s31);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_2, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_2)
-					+ s32);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_3, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_3)
-					+ s33);
-
-
-// THIS IS FOR COUPLING BETWEEN  Cv's against Cu's
-			k = -C_U_AMB*V_MU*K_MV/( (C_U_AMB + K_MU)*std::pow(C_V_AMB + K_MV,2) );
-			k = k*jacobian(coordinates);
-
-			s11 = (3*r1 + r2 + r3)*k/60;
-			s12 = (2*r1 + 2*r2 + r3)*k/120;
-			s13 = (2*r1 + r2 + 2*r3)*k/120;
-
-			s21 = (2*r1 + 2*r2 + r3)*k/120;
-			s22 = (r1 + 3*r2 + r3)*k/60;
-			s23 = (r1 + 2*r2 + 2*r3)*k/120;
-			
-			s31 = (2*r1 + r2 + 2*r3)*k/120;
-			s32 = (r1 + 2*r2 + 2*r3)*k/120;
-			s33 = (r1 + r2 + 3*r3)*k/60;
-
-			gsl_spmatrix_set(&global_stiffness, n_1, n_1 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_1 + NUM_NODES)
-					+ s11);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_2 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_2 + NUM_NODES)
-					+ s12);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_3 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_3 + NUM_NODES)
-					+ s13);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_1 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_1 + NUM_NODES)
-					+ s21);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_2 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_2 + NUM_NODES)
-					+ s22);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_3 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_2, n_3 + NUM_NODES)
-					+ s23);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_1 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_1 + NUM_NODES)
-					+ s31);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_2 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_2 + NUM_NODES)
-					+ s32);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_3 + NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_3, n_3 + NUM_NODES)
-					+ s33);
-
-// THIS IS FOR Cv's 
-			n_1 += NUM_NODES;
-			n_2 += NUM_NODES;
-			n_3 += NUM_NODES;
-
-			k = -C_U_AMB*K_MV*V_MU*RESP_Q/( (C_U_AMB + K_MU)*std::pow(C_V_AMB + K_MV,2) );
-			k = k*jacobian(coordinates);
-			s11 = (3*r1 + r2 + r3)*k/60;
-			s12 = (2*r1 + 2*r2 + r3)*k/120;
-			s13 = (2*r1 + r2 + 2*r3)*k/120;
-
-			s21 = (2*r1 + 2*r2 + r3)*k/120;
-			s22 = (r1 + 3*r2 + r3)*k/60;
-			s23 = (r1 + 2*r2 + 2*r3)*k/120;
-			
-			s31 = (2*r1 + r2 + 2*r3)*k/120;
-			s32 = (r1 + 2*r2 + 2*r3)*k/120;
-			s33 = (r1 + r2 + 3*r3)*k/60;
-
-			gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_1)
-					- s11);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_2,
-					gsl_spmatrix_get(&global_stiffness, n_1, n_2)
-					- s12);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_3,
-					gsl_spmatrix_get(&global_stiffness, n_1, n_3)
-					- s13);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_1,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_1)
-					- s21);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_2,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_2)
-					- s22);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_3,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_3)
-					- s23);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_1,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_1)
-					- s31);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_2,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_2)
-					- s32);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_3,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_3)
-					- s33);
-
-// THIS IS FOR COUPLING BETWEEN  Cu's against Cv's
-
-			// Same as first part
-			
-			precision_t numerator = K_MV*(-std::pow(C_U_AMB,2)*K_MFU*MAX_FERM_CO2 + std::pow(C_U_AMB,2)*K_MU*V_MU*RESP_Q - 2*C_U_AMB*K_MFU*K_MU*MAX_FERM_CO2 + 2*C_U_AMB*K_MFU*K_MU*V_MU*RESP_Q + std::pow(K_MFU,2)*K_MU*V_MU*RESP_Q - K_MFU*std::pow(K_MU,2)*MAX_FERM_CO2) ;
-			//precision_t numerator = -C_U_AMB*K_MFU*MAX_FERM_CO2 + C_U_AMB*K_MU*V_MU*RESP_Q \
-								 - 2*K_MFU*K_MU*MAX_FERM_CO2 + 2*K_MFU*K_MU*V_MU*RESP_Q;
-			
-			precision_t denominator = C_U_AMB*(std::pow(C_U_AMB,3)*C_V_AMB + std::pow(C_U_AMB,3)*K_MV + 2*std::pow(C_U_AMB,2)*K_MFU*K_MV + 2*std::pow(C_U_AMB,2)*K_MU*K_MV + C_U_AMB*std::pow(K_MFU,2)*K_MV + 4*C_U_AMB*K_MFU*K_MU*K_MV + C_U_AMB*std::pow(K_MU,2)*K_MV + 2*std::pow(K_MFU,2)*K_MU*K_MV + 2*K_MFU*std::pow(K_MU,2)*K_MV);
-			//precision_t denominator = C_U_AMB*( std::pow(C_U_AMB,2) + 2*C_U_AMB*K_MFU + 2*C_U_AMB*K_MU + 4*K_MFU*K_MU + std::pow(K_MU,2) );
-			k = numerator/denominator;
-			k = k*jacobian(coordinates);
-			s11 = (3*r1 + r2 + r3)*k/60;
-			s12 = (2*r1 + 2*r2 + r3)*k/120;
-			s13 = (2*r1 + r2 + 2*r3)*k/120;
-
-			s21 = (2*r1 + 2*r2 + r3)*k/120;
-			s22 = (r1 + 3*r2 + r3)*k/60;
-			s23 = (r1 + 2*r2 + 2*r3)*k/120;
-			
-			s31 = (2*r1 + r2 + 2*r3)*k/120;
-			s32 = (r1 + 2*r2 + 2*r3)*k/120;
-			s33 = (r1 + r2 + 3*r3)*k/60;
-
-			gsl_spmatrix_set(&global_stiffness, n_1, n_1 - NUM_NODES, 
-					gsl_spmatrix_get(&global_stiffness, n_1, n_1 - NUM_NODES)
-					- s11);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_2 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_1, n_2 - NUM_NODES)
-					- s12);
-			gsl_spmatrix_set(&global_stiffness, n_1, n_3 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_1, n_3 - NUM_NODES)
-					- s13);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_1 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_1 - NUM_NODES)
-					- s21);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_2 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_2 - NUM_NODES)
-					- s22);
-			gsl_spmatrix_set(&global_stiffness, n_2, n_3 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_2, n_3 - NUM_NODES)
-					- s23);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_1 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_1 - NUM_NODES)
-					- s31);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_2 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_2 - NUM_NODES)
-					- s32);
-			gsl_spmatrix_set(&global_stiffness, n_3, n_3 - NUM_NODES,
-					gsl_spmatrix_get(&global_stiffness, n_3, n_3 - NUM_NODES)
-					- s33);
-
-
-
-			return EXIT_SUCCESS;	
+			gsl_vector* temp_coeff;
+			temp_coeff = gsl_vector_calloc(2*NUM_NODES);
+			for (size_t i = 0; i < NUM_NODES; i++){
+				gsl_vector_set(temp_coeff, i, C_U_AMB);
+				gsl_vector_set(temp_coeff, i + (size_t)NUM_NODES, C_V_AMB);
+			}
+			update_sp_with_jacobian(temp_coeff, coordinates, &global_stiffness);
+			gsl_vector_free(temp_coeff);
+		
 		}
+		//int update_stiffness_with_linearized_integral(
+		//		const std::vector<std::vector<precision_t>>& coordinates,
+		//		stiff_mat_t& global_stiffness){
+
+		//	node_t n_1 = this->nodes_[0];
+		//	node_t n_2 = this->nodes_[1];
+		//	node_t n_3 = this->nodes_[2];
+		//	precision_t r1 = coordinates[n_1][0];
+		//	precision_t r2 = coordinates[n_2][0];
+		//	precision_t r3 = coordinates[n_3][0];
+		//	
+
+
+// THIS //IS FOR Cu's
+
+		//	precision_t k = K_MU*K_MV*V_MU/( std::pow(C_U_AMB + K_MU,2)*(C_V_AMB + K_MV) );
+		//	k = k*jacobian(coordinates);
+		//	precision_t s11 = (3*r1 + r2 + r3)*k/60;
+		//	precision_t s12 = (2*r1 + 2*r2 + r3)*k/120;
+		//	precision_t s13 = (2*r1 + r2 + 2*r3)*k/120;
+
+		//	precision_t s21 = (2*r1 + 2*r2 + r3)*k/120;
+		//	precision_t s22 = (r1 + 3*r2 + r3)*k/60;
+		//	precision_t s23 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	
+		//	precision_t s31 = (2*r1 + r2 + 2*r3)*k/120;
+		//	precision_t s32 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	precision_t s33 = (r1 + r2 + 3*r3)*k/60;
+
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_1)
+		//			+ s11);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_2, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_2)
+		//			+ s12);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_3, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_3)
+		//			+ s13);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_1, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_1)
+		//			+ s21);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_2, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_2)
+		//			+ s22);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_3, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_3)
+		//			+ s23);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_1, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_1)
+		//			+ s31);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_2, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_2)
+		//			+ s32);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_3, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_3)
+		//			+ s33);
+
+
+// THIS //IS FOR COUPLING BETWEEN  Cv's against Cu's
+		//	k = -C_U_AMB*V_MU*K_MV/( (C_U_AMB + K_MU)*std::pow(C_V_AMB + K_MV,2) );
+		//	k = k*jacobian(coordinates);
+
+		//	s11 = (3*r1 + r2 + r3)*k/60;
+		//	s12 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s13 = (2*r1 + r2 + 2*r3)*k/120;
+
+		//	s21 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s22 = (r1 + 3*r2 + r3)*k/60;
+		//	s23 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	
+		//	s31 = (2*r1 + r2 + 2*r3)*k/120;
+		//	s32 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	s33 = (r1 + r2 + 3*r3)*k/60;
+
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_1 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_1 + NUM_NODES)
+		//			+ s11);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_2 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_2 + NUM_NODES)
+		//			+ s12);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_3 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_3 + NUM_NODES)
+		//			+ s13);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_1 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_1 + NUM_NODES)
+		//			+ s21);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_2 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_2 + NUM_NODES)
+		//			+ s22);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_3 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_3 + NUM_NODES)
+		//			+ s23);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_1 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_1 + NUM_NODES)
+		//			+ s31);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_2 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_2 + NUM_NODES)
+		//			+ s32);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_3 + NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_3 + NUM_NODES)
+		//			+ s33);
+
+// THIS //IS FOR Cv's 
+		//	n_1 += NUM_NODES;
+		//	n_2 += NUM_NODES;
+		//	n_3 += NUM_NODES;
+
+		//	k = -C_U_AMB*K_MV*V_MU*RESP_Q/( (C_U_AMB + K_MU)*std::pow(C_V_AMB + K_MV,2) );
+		//	k = k*jacobian(coordinates);
+		//	s11 = (3*r1 + r2 + r3)*k/60;
+		//	s12 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s13 = (2*r1 + r2 + 2*r3)*k/120;
+
+		//	s21 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s22 = (r1 + 3*r2 + r3)*k/60;
+		//	s23 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	
+		//	s31 = (2*r1 + r2 + 2*r3)*k/120;
+		//	s32 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	s33 = (r1 + r2 + 3*r3)*k/60;
+
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_1, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_1)
+		//			- s11);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_2,
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_2)
+		//			- s12);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_3,
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_3)
+		//			- s13);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_1,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_1)
+		//			- s21);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_2,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_2)
+		//			- s22);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_3,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_3)
+		//			- s23);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_1,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_1)
+		//			- s31);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_2,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_2)
+		//			- s32);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_3,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_3)
+		//			- s33);
+
+// THIS //IS FOR COUPLING BETWEEN  Cu's against Cv's
+
+		//	// Same as first part
+		//	
+		//	precision_t numerator = K_MV*(-std::pow(C_U_AMB,2)*K_MFU*MAX_FERM_CO2 + std::pow(C_U_AMB,2)*K_MU*V_MU*RESP_Q - 2*C_U_AMB*K_MFU*K_MU*MAX_FERM_CO2 + 2*C_U_AMB*K_MFU*K_MU*V_MU*RESP_Q + std::pow(K_MFU,2)*K_MU*V_MU*RESP_Q - K_MFU*std::pow(K_MU,2)*MAX_FERM_CO2) ;
+		//	//precision_t numerator = -C_U_AMB*K_MFU*MAX_FERM_CO2 + C_U_AMB*K_MU*V_MU*RESP_Q \
+		//						 - 2*K_MFU*K_MU*MAX_FERM_CO2 + 2*K_MFU*K_MU*V_MU*RESP_Q;
+		//	
+		//	precision_t denominator = C_U_AMB*(std::pow(C_U_AMB,3)*C_V_AMB + std::pow(C_U_AMB,3)*K_MV + 2*std::pow(C_U_AMB,2)*K_MFU*K_MV + 2*std::pow(C_U_AMB,2)*K_MU*K_MV + C_U_AMB*std::pow(K_MFU,2)*K_MV + 4*C_U_AMB*K_MFU*K_MU*K_MV + C_U_AMB*std::pow(K_MU,2)*K_MV + 2*std::pow(K_MFU,2)*K_MU*K_MV + 2*K_MFU*std::pow(K_MU,2)*K_MV);
+		//	//precision_t denominator = C_U_AMB*( std::pow(C_U_AMB,2) + 2*C_U_AMB*K_MFU + 2*C_U_AMB*K_MU + 4*K_MFU*K_MU + std::pow(K_MU,2) );
+		//	k = numerator/denominator;
+		//	k = k*jacobian(coordinates);
+		//	s11 = (3*r1 + r2 + r3)*k/60;
+		//	s12 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s13 = (2*r1 + r2 + 2*r3)*k/120;
+
+		//	s21 = (2*r1 + 2*r2 + r3)*k/120;
+		//	s22 = (r1 + 3*r2 + r3)*k/60;
+		//	s23 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	
+		//	s31 = (2*r1 + r2 + 2*r3)*k/120;
+		//	s32 = (r1 + 2*r2 + 2*r3)*k/120;
+		//	s33 = (r1 + r2 + 3*r3)*k/60;
+
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_1 - NUM_NODES, 
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_1 - NUM_NODES)
+		//			- s11);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_2 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_2 - NUM_NODES)
+		//			- s12);
+		//	gsl_spmatrix_set(&global_stiffness, n_1, n_3 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_1, n_3 - NUM_NODES)
+		//			- s13);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_1 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_1 - NUM_NODES)
+		//			- s21);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_2 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_2 - NUM_NODES)
+		//			- s22);
+		//	gsl_spmatrix_set(&global_stiffness, n_2, n_3 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_2, n_3 - NUM_NODES)
+		//			- s23);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_1 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_1 - NUM_NODES)
+		//			- s31);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_2 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_2 - NUM_NODES)
+		//			- s32);
+		//	gsl_spmatrix_set(&global_stiffness, n_3, n_3 - NUM_NODES,
+		//			gsl_spmatrix_get(&global_stiffness, n_3, n_3 - NUM_NODES)
+		//			- s33);
+
+
+
+		//	return EXIT_SUCCESS;	
+		//}
+		
+		//int update_f_vector_with_linearized_integral(
+		//		const std::vector<std::vector<precision_t>>& coordinates, 
+		//		global_vect_t& vector_f){
+		//	node_t n_1 = this->nodes_[0];
+		//	node_t n_2 = this->nodes_[1];
+		//	node_t n_3 = this->nodes_[2];
+		//	precision_t r1 = coordinates[n_1][0];
+		//	precision_t r2 = coordinates[n_2][0];
+		//	precision_t r3 = coordinates[n_3][0];
+
+
+
+		//	precision_t numerator = C_U_AMB*K_MV*V_MU*(2*C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU);
+		//	precision_t denominator = 24*std::pow(C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU + K_MU*K_MV,2);
+
+		//	precision_t k = numerator/denominator;
+		//	k = k*jacobian(coordinates);
+		//	
+		//	precision_t val_1 = k*(2*r1 + r2 + r3);
+		//	precision_t val_2 = k*(r1 + 2*r2 + r3);
+		//	precision_t val_3 = k*(r1 + r2 + 2*r3);
+
+		//	gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) + 
+		//			val_1);
+		//	gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) + 
+		//			val_2);
+		//	gsl_vector_set(&vector_f, n_3, gsl_vector_get(&vector_f, n_3) + 
+		//			val_3);
+
+		//	n_1 += NUM_NODES;
+		//	n_2 += NUM_NODES;
+		//	n_3 += NUM_NODES;
+
+
+		//	numerator = 2*std::pow(C_U_AMB,2)*C_V_AMB*V_MU*RESP_Q + std::pow(C_U_AMB,2)*K_MV*V_MU*RESP_Q + 2*C_U_AMB*K_MFU*K_MV*MAX_FERM_CO2 \
+		//				+ 2*C_U_AMB*K_MFU*K_MV*V_MU*RESP_Q + 4*K_MFU*K_MU*K_MV*MAX_FERM_CO2;
+
+		//	denominator = 24*K_MV*(std::pow(C_U_AMB,2) + 2*C_U_AMB*K_MFU + 2*C_U_AMB*K_MU + 4*K_MFU*K_MU + std::pow(K_MU,2) );
+
+		//	k = numerator/denominator;
+		//	k= k*jacobian(coordinates);
+		//
+		//	val_1 = k*(2*r1 + r2 + r3);
+		//	val_2 = k*(r1 + 2*r2 + r3);
+		//	val_3 = k*(r1 + r2 + 2*r3);
+
+
+		//	gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) - 
+		//			val_1);
+		//	gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) - 
+		//			val_2);
+		//	gsl_vector_set(&vector_f, n_3, gsl_vector_get(&vector_f, n_3) - 
+		//			val_3);
+		//	return EXIT_SUCCESS;	
+		//}
 		
 		int update_f_vector_with_linearized_integral(
 				const std::vector<std::vector<precision_t>>& coordinates, 
@@ -784,51 +885,73 @@ class ElementTriangular : public Element<P, I>{
 			precision_t r2 = coordinates[n_2][0];
 			precision_t r3 = coordinates[n_3][0];
 
-
-
-			precision_t numerator = C_U_AMB*K_MV*V_MU*(2*C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU);
-			precision_t denominator = 24*std::pow(C_U_AMB*C_V_AMB + C_U_AMB*K_MV + C_V_AMB*K_MU + K_MU*K_MV,2);
-
-			precision_t k = numerator/denominator;
-			k = k*jacobian(coordinates);
-			
-			precision_t val_1 = k*(2*r1 + r2 + r3);
-			precision_t val_2 = k*(r1 + 2*r2 + r3);
-			precision_t val_3 = k*(r1 + r2 + 2*r3);
-
-			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) + 
-					val_1);
-			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) + 
-					val_2);
-			gsl_vector_set(&vector_f, n_3, gsl_vector_get(&vector_f, n_3) + 
-					val_3);
-
-			n_1 += NUM_NODES;
-			n_2 += NUM_NODES;
-			n_3 += NUM_NODES;
-
-
-			numerator = 2*std::pow(C_U_AMB,2)*C_V_AMB*V_MU*RESP_Q + std::pow(C_U_AMB,2)*K_MV*V_MU*RESP_Q + 2*C_U_AMB*K_MFU*K_MV*MAX_FERM_CO2 \
-						+ 2*C_U_AMB*K_MFU*K_MV*V_MU*RESP_Q + 4*K_MFU*K_MU*K_MV*MAX_FERM_CO2;
-
-			denominator = 24*K_MV*(std::pow(C_U_AMB,2) + 2*C_U_AMB*K_MFU + 2*C_U_AMB*K_MU + 4*K_MFU*K_MU + std::pow(K_MU,2) );
-
-			k = numerator/denominator;
-			k= k*jacobian(coordinates);
-		
-			val_1 = k*(2*r1 + r2 + r3);
-			val_2 = k*(r1 + 2*r2 + r3);
-			val_3 = k*(r1 + r2 + 2*r3);
-
-
-			gsl_vector_set(&vector_f, n_1, gsl_vector_get(&vector_f, n_1) - 
-					val_1);
-			gsl_vector_set(&vector_f, n_2, gsl_vector_get(&vector_f, n_2) - 
-					val_2);
-			gsl_vector_set(&vector_f, n_3, gsl_vector_get(&vector_f, n_3) - 
-					val_3);
-			return EXIT_SUCCESS;	
+			gsl_vector* coefficients;
+			coefficients = gsl_vector_calloc(2*NUM_NODES);
+			for (size_t i = 0; i < NUM_NODES; i++){
+				gsl_vector_set(coefficients, i, C_U_AMB);
+				gsl_vector_set(coefficients, i + (size_t)NUM_NODES, C_V_AMB);
 			}
+
+			integrate_non_linear_term_3(coefficients, coordinates, 1, 
+					&vector_f);
+			
+			precision_t result_uu;
+			precision_t result_uv;
+			precision_t result_vu;
+			precision_t result_vv;
+			size_t node_1;
+			size_t node_2;
+			for (int node_idx = 0; node_idx < 3; node_idx++){
+				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
+					node_1 = this->nodes_[node_idx];	
+					node_2 = this->nodes_[coeff_idx - 1];	
+					result_uu = (
+						diff_integrand_u(0.5, 0, coefficients, coordinates,
+							node_idx, coeff_idx) + 
+						diff_integrand_u(0, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx) +
+						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx)
+						)/6;
+
+					result_uv = (
+						diff_integrand_u(0.5, 0, coefficients, coordinates,
+							node_idx, coeff_idx + 3) + 
+						diff_integrand_u(0, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx + 3) +
+						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx + 3)
+						)/6;
+
+					result_vu = (
+						diff_integrand_v(0.5, 0, coefficients, coordinates,
+							node_idx, coeff_idx) + 
+						diff_integrand_v(0, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx) +
+						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx)
+						)/6;
+
+					result_vv = (
+						diff_integrand_v(0.5, 0, coefficients, coordinates,
+							node_idx, coeff_idx + 3) + 
+						diff_integrand_v(0, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx + 3) +
+						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
+							node_idx, coeff_idx + 3)
+						)/6;
+
+					gsl_vector_set(&vector_f, node_1,
+							gsl_vector_get(&vector_f, node_1) 
+							- (result_uu*C_U_AMB + result_uv*C_V_AMB));
+					gsl_vector_set(&vector_f, node_1 + NUM_NODES,
+							gsl_vector_get(&vector_f, node_1 + NUM_NODES) 
+							+ (result_vu*C_U_AMB + result_vv*C_V_AMB));
+					} 
+			}
+			gsl_vector_free(coefficients);
+			return EXIT_SUCCESS;	
+		}
 };
 
 template <typename P, typename I>
@@ -973,4 +1096,3 @@ class ElementBoundary : public Element<P, I>{
 		}
 };
 }
-

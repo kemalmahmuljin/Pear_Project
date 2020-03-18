@@ -129,10 +129,12 @@ class ConcentrationModel{
 				elem.update_stiffness_matrix(coordinates_, 
 						*stiffness_matrix_);
 			}
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "trian_elem_stiff");
 			for (auto bound : boundaries_){
 				bound.update_stiffness_matrix(coordinates_, 
 						*stiffness_matrix_);
 			}
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "elem_stiff");
 			return EXIT_SUCCESS;
 		}
 
@@ -277,6 +279,7 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
+			FEM_module::write_vector_to_file(f_vector_, "f_vector_no_resp");
 			add_linear_approx_to_f_vector();
 			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
@@ -332,6 +335,7 @@ class ConcentrationModel{
 				}
 				myfile<<std::endl;
 			}
+			myfile.close();
 		}
 
 		int write_elements_to_file(std::string filename){
@@ -343,6 +347,7 @@ class ConcentrationModel{
 				}
 				myfile<<std::endl;
 			}
+			myfile.close();
 		}
 
 		int write_boundaries_to_file(std::string filename){
@@ -354,7 +359,9 @@ class ConcentrationModel{
 				}
 				myfile<<(int)bound.axis_flag;
 				myfile<<" "<<std::endl;
-			}}
+			}
+			myfile.close();
+		}
 };
 
 std::ostream& operator<<(std::ostream& os, const gsl_spmatrix* sp_mat){

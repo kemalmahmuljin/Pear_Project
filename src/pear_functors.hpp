@@ -150,6 +150,7 @@ int write_matrix_to_file(const gsl_spmatrix* mtrx, std::string filename){
 	myfile.open(filename, std::ios::out);
 	myfile<<spmatrix_to_string(mtrx);
 	myfile.close();	
+	return EXIT_SUCCESS;
 }
 
 int write_vector_to_file(const gsl_vector* vect, std::string filename){
@@ -157,5 +158,6 @@ int write_vector_to_file(const gsl_vector* vect, std::string filename){
 	myfile.open(filename, std::ios::out);
 	myfile<<vector_to_string(vect);
 	myfile.close();	
+	return EXIT_SUCCESS;
 }
 }
