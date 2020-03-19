@@ -24,11 +24,11 @@ x0 = dlmread('../src/initial_coeff', ' ', 1, 0);
 x0= x0(:, 1:end - 1)';
 
 %model_function(x0)
-options = optimoptions('fsolve');
-options.FunctionTolerance = 1e-16;
-options.OptimalityTolerance = 1e-16;
-options.StepTolerance = 1e-22
-[x,fval,exitflag,out] = fsolve(@model_function, x0, options);
+options = optimoptions(@fsolve,'Display','iter',...
+    'Algorithm','trust-region',...
+    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0);
+[x,fval,exitflag,output] = fsolve(@model_function,x0,options);
+
 function int_val = integrand(coefficients, epsilon, eta)
 global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 	TEMP = 25;
@@ -126,16 +126,16 @@ global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 
 		ruu = RESP_Q*(V_MU*(K_MU + c_u)*(1 + c_v/K_MV) - ...
 						V_MU*c_u*(1 + c_v/K_MV))/ ...
-					pow((K_MU + c_u)*(1 + c_v/K_MV), 2) - ...
-					MAX_FERM_CO2/(K_MFU*pow((1 + c_u/K_MFU), 2));
+					((K_MU + c_u)*(1 + c_v/K_MV))^2 - ...
+					MAX_FERM_CO2/(K_MFU*((1 + c_u/K_MFU))^2);
 		ruv = -RESP_Q*(V_MU*c_u)*(K_MU + c_u)/ ...
-					(K_MV*pow((K_MU + c_u)*(1 + c_v/K_MV), 2));
+					(K_MV*((K_MU + c_u)*(1 + c_v/K_MV))^2);
 		
 		rvu =  -RESP_Q*(V_MU*c_u)*(K_MU + c_u)/ ...
-					(K_MV*pow((K_MU + c_u)*(1 + c_v/K_MV), 2));
+					(K_MV*((K_MU + c_u)*(1 + c_v/K_MV))^2);
 		
 		rvv =  -RESP_Q*(V_MU*c_u)*(K_MU + c_u)/ ...
-					(K_MV*pow((K_MU + c_u)*(1 + c_v/K_MV), 2));
+					(K_MV*((K_MU + c_u)*(1 + c_v/K_MV))^2);
 
 		% u_u
 		jacob(elem(1)+1, elem(1)+1) = jacob(elem(1)+1, elem(1)+1) + ...
@@ -227,12 +227,15 @@ global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 	end
 end
 
-function val = model_function(x)
+function [val, jac] = model_function(x)
 global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 	val = (integrand(x, 0, 0.5) + ...
 	integrand(x, 0.5, 0) + ...
 	integrand(x, 0.5, 0.5))/6.0 + ...
-	0;%stiffness*x + fvector;
+	stiffness*x + fvector;
+	jac = (jacobian(x, 0, 0.5) + ...
+	jacobian(x, 0.5, 0) + ...
+	jacobian(x, 0.5, 0.5)) + stiffness;
 end
 
 
