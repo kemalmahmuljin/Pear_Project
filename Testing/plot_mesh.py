@@ -1,28 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-file_name = "mesh_test_out"
-file_o = open(file_name, 'r')
-fig = plt.figure()
-line = file_o.readline()
-line_data = file_o.readline().strip().split()
-coords = np.array([float(line_data[3]), float(line_data[5])])
-line = file_o.readline()
-while line.strip() != "":
-    line_data = line.strip().split()
-    coords = np.vstack((coords, 
-        np.array([float(line_data[3]), float(line_data[5])])))
-    line = file_o.readline()
-
-line = file_o.readline()
-line_data = line.strip().split()
-nodes = np.array([int(line_data[3]), int(line_data[5]), int(line_data[7])])
-line = file_o.readline()
-while line.strip() != "":
-    line_data = line.strip().split()
-    nodes = np.vstack((nodes, 
-        np.array([int(line_data[3]), int(line_data[5]), int(line_data[7])])))
-    line = file_o.readline()
+file_name = "elements"
+coords = np.loadtxt("coords", skiprows=1)
+nodes = np.loadtxt("elements").astype(int)
 
 for elem in nodes:
     x = [coords[elem[0]][0], coords[elem[1]][0], coords[elem[2]][0]
@@ -41,8 +22,9 @@ for elem in nodes:
         ax.arrow(coords[elem[i%3]][0], coords[elem[i%3]][1],
                 coords[elem[(i+ 1)%3]][0]-coords[elem[i%3]][0],
                 coords[elem[(i + 1)%3]][1]-coords[elem[i%3]][1], 
-                head_width = 1)
-    plt.xlim(0,40)
-    plt.ylim(0,100)    
+                head_width=0.001, head_length=0.003, width=0.00001,
+                length_includes_head=True)
+    plt.xlim(-0.01,0.40)
+    plt.ylim(-0.01,0.140)
     plt.show()
     count += 1
