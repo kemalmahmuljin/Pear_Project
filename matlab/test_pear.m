@@ -27,7 +27,7 @@ x0= x0(:, 1:end - 1)';
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
     'SpecifyObjectiveGradient',true,'PrecondBandWidth',0);
-[x,fval,exitflag,output] = fsolve(@model_function,x0,options);
+[x,fval,exitflag,output] = fsolve(@model_function,zeros(length(x0),1),options);
 
 function int_val = integrand(coefficients, epsilon, eta)
 global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
@@ -54,7 +54,7 @@ global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 		r3 = coord3(1);
 		z3 = coord3(2);
 		r = r1 + (r2 - r1)*epsilon + (r3 - r1)*eta;
-		jac = abs((r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1));
+		jac = (r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1);
 
 		phi_1 = 1 - epsilon - eta;
 		phi_2 = epsilon;
@@ -183,47 +183,47 @@ global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 
 		% v_u
 		jacob(elem(1)+nodes+1, elem(1)+1) = jacob(elem(1)+nodes+1, ...
-			elem(1)+1) + r*rvu*phi_1*phi_1*jac;
+			elem(1)+1) - r*rvu*phi_1*phi_1*jac;
 		jacob(elem(1)+nodes+1, elem(2)+1) = jacob(elem(1)+nodes+1, ...
-			elem(2)+1) + r*rvu*phi_1*phi_2*jac;
+			elem(2)+1) - r*rvu*phi_1*phi_2*jac;
 		jacob(elem(1)+nodes+1, elem(3)+1) = jacob(elem(1)+nodes+1, ...
-			elem(3)+1) + r*rvu*phi_1*phi_3*jac;
+			elem(3)+1) - r*rvu*phi_1*phi_3*jac;
 
 		jacob(elem(2)+nodes+1, elem(1)+1) = jacob(elem(2)+nodes+1, ...
-			elem(1)+1) + r*rvu*phi_2*phi_1*jac;
+			elem(1)+1) - r*rvu*phi_2*phi_1*jac;
 		jacob(elem(2)+nodes+1, elem(2)+1) = jacob(elem(2)+nodes+1, ...
-			elem(2)+1) + r*rvu*phi_2*phi_2*jac;
+			elem(2)+1) - r*rvu*phi_2*phi_2*jac;
 		jacob(elem(2)+nodes+1, elem(3)+1) = jacob(elem(2)+nodes+1, ...
-			elem(3)+1) + r*rvu*phi_2*phi_3*jac;
+			elem(3)+1) - r*rvu*phi_2*phi_3*jac;
 
 		jacob(elem(3)+nodes+1, elem(1)+1) = jacob(elem(3)+nodes+1, ...
-			elem(1)+1) + r*rvu*phi_3*phi_1*jac;
+			elem(1)+1) - r*rvu*phi_3*phi_1*jac;
 		jacob(elem(3)+nodes+1, elem(2)+1) = jacob(elem(3)+nodes+1, ...
-			elem(2)+1) + r*rvu*phi_3*phi_2*jac;
+			elem(2)+1) - r*rvu*phi_3*phi_2*jac;
 		jacob(elem(3)+nodes+1, elem(3)+1) = jacob(elem(3)+nodes+1, ...
-			elem(3)+1) + r*rvu*phi_3*phi_3*jac;
+			elem(3)+1) - r*rvu*phi_3*phi_3*jac;
 
-		% u_v
+		% v_v
 		jacob(elem(1)+nodes+1, elem(1)+nodes+1) = jacob(elem(1)+nodes+1, ...
-			elem(1)+nodes+1) + r*rvv*phi_1*phi_1*jac;
+			elem(1)+nodes+1) - r*rvv*phi_1*phi_1*jac;
 		jacob(elem(1)+nodes+1, elem(2)+nodes+1) = jacob(elem(1)+nodes+1, ...
-			elem(2)+nodes+1) + r*rvv*phi_1*phi_2*jac;
+			elem(2)+nodes+1) - r*rvv*phi_1*phi_2*jac;
 		jacob(elem(1)+nodes+1, elem(3)+nodes+1) = jacob(elem(1)+nodes+1, ...
-			elem(3)+nodes+1) + r*rvv*phi_1*phi_3*jac;
+			elem(3)+nodes+1) - r*rvv*phi_1*phi_3*jac;
 		
 		jacob(elem(2)+nodes+1, elem(1)+nodes+1) = jacob(elem(2)+nodes+1, ...
-			elem(1)+nodes+1) + r*rvv*phi_2*phi_1*jac;
+			elem(1)+nodes+1) - r*rvv*phi_2*phi_1*jac;
 		jacob(elem(2)+nodes+1, elem(2)+nodes+1) = jacob(elem(2)+nodes+1, ...
-			elem(2)+nodes+1) + r*rvv*phi_2*phi_2*jac;
+			elem(2)+nodes+1) - r*rvv*phi_2*phi_2*jac;
 		jacob(elem(2)+nodes+1, elem(3)+nodes+1) = jacob(elem(2)+nodes+1, ...
-			elem(3)+nodes+1) + r*rvv*phi_2*phi_3*jac;
+			elem(3)+nodes+1) - r*rvv*phi_2*phi_3*jac;
 	
 		jacob(elem(3)+nodes+1, elem(1)+nodes+1) = jacob(elem(3)+nodes+1, ...
-			elem(1)+nodes+1) + r*rvv*phi_3*phi_1*jac;
+			elem(1)+nodes+1) - r*rvv*phi_3*phi_1*jac;
 		jacob(elem(3)+nodes+1, elem(2)+nodes+1) = jacob(elem(3)+nodes+1, ...
-			elem(2)+nodes+1) + r*rvv*phi_3*phi_2*jac;
+			elem(2)+nodes+1) - r*rvv*phi_3*phi_2*jac;
 		jacob(elem(3)+nodes+1, elem(3)+nodes+1) = jacob(elem(3)+nodes+1, ...
-			elem(3)+nodes+1) + r*rvv*phi_3*phi_3*jac;	
+			elem(3)+nodes+1) - r*rvv*phi_3*phi_3*jac;	
 	end
 end
 
@@ -235,7 +235,7 @@ global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 	stiffness*x + fvector;
 	jac = (jacobian(x, 0, 0.5) + ...
 	jacobian(x, 0.5, 0) + ...
-	jacobian(x, 0.5, 0.5)) + stiffness;
+	jacobian(x, 0.5, 0.5))/6.0 + stiffness;
 end
 
 
