@@ -33,6 +33,12 @@ f_str = f_str[f_str.find('\n') + 1:]
 f_stream = StringIO(f_str)
 f_vector = np.loadtxt(f_stream)
 
+f2_file = open("f_vector_lin", 'r')
+f2_str = f2_file.read()
+f2_str = f2_str[f2_str.find('\n') + 1:]
+f2_stream = StringIO(f2_str)
+f2_vector = np.loadtxt(f2_stream)
+
 #stiff = np.loadtxt("stiff_2", skiprows=1)
 def plot_coeff(coords, coeff):
     x = coords[:,0]

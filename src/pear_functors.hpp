@@ -109,11 +109,11 @@ extern "C" int fdf_function(const gsl_vector* x, void *param,
 
 std::string vector_to_string(const gsl_vector* vector_to_print){
 	std::stringstream str_stream;
-	str_stream<<"("<<vector_to_print->size<<")"<<"[";
+	str_stream<<"("<<vector_to_print->size<<")"<<std::endl;
 	for (size_t i = 0; i < vector_to_print->size; i++){
 		str_stream<<gsl_vector_get(vector_to_print, i)<<" ";
 	}
-	str_stream<<"]"<<std::endl;
+	str_stream<<std::endl;
 	return str_stream.str();
 }
 

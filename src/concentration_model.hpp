@@ -139,7 +139,7 @@ class ConcentrationModel{
 
 		int add_linear_approx_to_stiffness(){
 			for (auto elem : elements_){
-				elem.update_sp_with_linearized_int_2(coordinates_, 
+				elem.update_sp_with_linearized_int_2(coefficients_, coordinates_, 
 						stiffness_matrix_);
 			}
 		}
@@ -154,8 +154,8 @@ class ConcentrationModel{
 		
 		int add_linear_approx_to_f_vector(){
 			for (auto elem : elements_){
-				elem.update_f_vector_with_linearized_integral_2(coordinates_, 
-						*f_vector_);
+				elem.update_f_vector_with_linearized_integral_2(coefficients_,
+						coordinates_, *f_vector_);
 			}
 		}
 		
@@ -230,18 +230,22 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
+			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model_LU();
+			gsl_vector_scale(f_vector_, -1.0);
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
+			FEM_module::write_vector_to_file(f_vector_, "f_vector_lin");
 			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_2");
-			FEM_module::write_vector_to_file(f_vector_, "f_vector");
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_lin");
 			solve_linear_model_LU();
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff");
+			FEM_module::write_vector_to_file(f_vector_, "f_vector");
 
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 3);
@@ -280,7 +284,9 @@ class ConcentrationModel{
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
+			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model_LU();
+			gsl_vector_scale(f_vector_, -1.0);
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, "f_vector_lin");
