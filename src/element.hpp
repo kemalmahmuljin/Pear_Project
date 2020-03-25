@@ -138,6 +138,10 @@ class ElementTriangular : public Element<P, I>{
 			else if (idx == 3){
 				return phi_3(epsilon, eta);
 			}
+			else{
+				assert(1 == 0);
+				return EXIT_FAILURE;
+			}
 		}
 		
 	public:
@@ -259,6 +263,10 @@ class ElementTriangular : public Element<P, I>{
 				return (r1 + (r2 - r1)*u + (r3 - r1)*v)*r_u(coefficients, 
 						u, v)*phi_3(u, v)*jacobian(coordinates);
 			}
+			else{
+				assert(1 == 0);
+				return EXIT_FAILURE;
+			}
 		}
 		
 		precision_t integrand_v(precision_t u, precision_t v, 
@@ -285,6 +293,10 @@ class ElementTriangular : public Element<P, I>{
 			}else if (node_idx == 3){
 				return (r1 + (r2 - r1)*u + (r3 - r1)*v)*r_v(coefficients, 
 						u, v)*phi_3(u, v)*jacobian(coordinates);
+			}
+			else{
+				assert(1 == 0);
+				return EXIT_FAILURE;
 			}
 		}
 
@@ -878,6 +890,7 @@ class ElementTriangular : public Element<P, I>{
 				stiff_mat_t& global_stiffness){
 			update_sp_with_jacobian(coefficients, 
 					coordinates, &global_stiffness);
+			return EXIT_SUCCESS;
 		
 		}
 		//int update_stiffness_with_linearized_integral(

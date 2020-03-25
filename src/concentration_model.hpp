@@ -142,6 +142,7 @@ class ConcentrationModel{
 				elem.update_sp_with_linearized_int_2(coefficients_, coordinates_, 
 						stiffness_matrix_);
 			}
+			return EXIT_SUCCESS;
 		}
 		
 		int generate_f_vector(){
@@ -157,6 +158,7 @@ class ConcentrationModel{
 				elem.update_f_vector_with_linearized_integral_2(coefficients_,
 						coordinates_, *f_vector_);
 			}
+			return EXIT_SUCCESS;
 		}
 		
 		int update_matrix_with_jacobian(gsl_matrix* matrix_to_update){
@@ -164,7 +166,7 @@ class ConcentrationModel{
 				elem.update_with_jacobian(coefficients_, 
 						coordinates_, matrix_to_update);
 			}
-			
+			return EXIT_SUCCESS;
 		}
 
 		int	get_integral_vector(size_t cuad_points){
@@ -217,7 +219,7 @@ class ConcentrationModel{
 			
 			gsl_permutation_free(permut);
 			gsl_matrix_free(dense_stiff);
-			return 0;
+			return EXIT_SUCCESS;
 		}
 
 		int solve_nonlinear_model_fd(){
@@ -291,7 +293,7 @@ class ConcentrationModel{
 			add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, "f_vector_lin");
 			gsl_vector_scale(f_vector_, -1.0);
-			add_linear_approx_to_stiffness();
+			//add_linear_approx_to_stiffness();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_lin");
 			solve_linear_model_LU();
 			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
@@ -346,6 +348,7 @@ class ConcentrationModel{
 				myfile<<std::endl;
 			}
 			myfile.close();
+			return EXIT_SUCCESS;
 		}
 
 		int write_elements_to_file(std::string filename){
@@ -358,6 +361,7 @@ class ConcentrationModel{
 				myfile<<std::endl;
 			}
 			myfile.close();
+			return EXIT_SUCCESS;
 		}
 
 		int write_boundaries_to_file(std::string filename){
@@ -371,6 +375,7 @@ class ConcentrationModel{
 				myfile<<" "<<std::endl;
 			}
 			myfile.close();
+			return EXIT_SUCCESS;
 		}
 };
 

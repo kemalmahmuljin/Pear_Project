@@ -71,6 +71,58 @@ class JacobianFunctor{
 		}
 };
 
+template<typename P, typename I>
+class FiniteDifferenceFunctor{
+	public:
+		typedef P precision_t;
+		typedef I node_t;
+	private:
+		FEM_module::ConcentrationModel<precision_t, node_t>& model_;
+		FEM_module::NonLinearSystemFunctor<precision_t, node_t>& funct_;
+		precision_t epsilon_;
+		gsl_vector* delta;
+		gsl_vector* function_val;
+		gsl_vector* function_val_delta;
+		gsl_matrix* stiff_;
+	public:
+		FiniteDifferenceFunctor(FEM_module::ConcentrationModel<precision_t, 
+				node_t>& model, FEM_module::NonLinearSystemFunctor<precision_t, 
+				node_t>& funct, precision_t epsilon)
+		: model_(model)
+		, funct_(funct)
+		, epsilon_(epsilon){
+			delta = gsl_vector_alloc(2*model_.number_nodes());
+			function_val = gsl_vector_alloc(2*model_.number_nodes());
+			function_val_delta = gsl_vector_alloc(2*model_.number_nodes());
+			stiff_ = gsl_matrix_alloc(2*model_.number_nodes(), 
+					2*model_.number_nodes());
+			gsl_spmatrix_sp2d(stiff_, model_.stiffness_matrix());
+		}
+		~FiniteDifferenceFunctor(){
+			gsl_vector_free(delta);
+			gsl_vector_free(function_val);
+			gsl_vector_free(function_val_delta);
+			gsl_matrix_free(stiff_);
+		}
+		int operator()(const gsl_vector* x, void* params,
+				gsl_matrix* j){
+			gsl_vector_memcpy(delta, x);
+			funct_(x, NULL, function_val);
+			for (size_t idx = 0; idx < j->size1; idx++){
+				gsl_vector_set(delta, idx, gsl_vector_get(delta, idx) + 
+						epsilon_);
+				funct_(delta, NULL, function_val_delta);
+				gsl_vector_sub(function_val_delta, function_val);
+				gsl_vector_scale(function_val_delta, 1.0/epsilon_);
+				gsl_matrix_set_col(j, idx, function_val_delta);
+				gsl_vector_set(delta, idx, gsl_vector_get(delta, idx) - 
+						epsilon_);
+			}
+			gsl_matrix_add(j, stiff_);
+			return EXIT_SUCCESS;
+		}
+};
+
 struct solver_params {
 	FEM_module::NonLinearSystemFunctor<double, int>* func;
 	FEM_module::JacobianFunctor<double, int>* jac;
