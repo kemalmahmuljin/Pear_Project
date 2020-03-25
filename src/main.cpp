@@ -2,6 +2,8 @@
 #ifndef IMPORTER_HPP
 #define IMPORTER_HPP
 #include "importer.hpp"
+#include <cmath>
+#include <string>
 #endif
 
 #ifndef ELEMENT_HPP
@@ -19,13 +21,19 @@
 #include "pear_functors.hpp"
 #endif
 
+double TEMP = -1 + 273.15;
+int NUM_NODES_G = 529;
+double CON_O2 = 2.0/100.0;
+double CON_CO2 = 0.7/100.0;
+std::string FILEPATH = "../Input/new_pear_2.msh";
+
 // Element values configuation
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::SIGMA_UR = 2.8e-10;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::SIGMA_UZ = 1.1e-9;
+	FEM_module::ElementTriangular<P, I>::SIGMA_UZ = 1.10e-9;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::SIGMA_VR = 2.32e-9;
@@ -38,7 +46,7 @@ typename FEM_module::Element<P, I>::precision_t
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::MAX_FERM_CO2 = 1.61e-4*exp(
-			(56700/8.32)*(1/293 - 1/293));
+			(56700/8.314)*(1/293.15 - 1/TEMP));
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::K_MFU = 0.1149;
@@ -51,31 +59,28 @@ typename FEM_module::Element<P, I>::precision_t
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementTriangular<P, I>::V_MU = 2.39e-4*exp(
-			(80200/8.32)*(1/293 - 1/293));
+			(80200/8.314)*(1/293.15 - 1/TEMP));
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
 	FEM_module::ElementTriangular<P, I>::NUM_ELM = 0;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 42;
-	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 142;
-	//FEM_module::ElementTriangular<P, I>::NUM_NODES = 19;
-	FEM_module::ElementTriangular<P, I>::NUM_NODES = 8;
+	FEM_module::ElementTriangular<P, I>::NUM_NODES = NUM_NODES_G;
 
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*0.208/(8.32*293);
+	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*0.208/(8.314*TEMP);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*0.0/(8.32*293);
+	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*0.0/(8.314*TEMP);
 
 // boundary values configuration
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::C_U_AMB = 101300*0.208/(8.32*293);
+	FEM_module::ElementBoundary<P, I>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::C_V_AMB = 101300*0.0/(8.32*293);
+	FEM_module::ElementBoundary<P, I>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
 	FEM_module::ElementBoundary<P, I>::RHO_U = 7e-7;
@@ -84,13 +89,10 @@ typename FEM_module::Element<P, I>::precision_t
 	FEM_module::ElementBoundary<P, I>::RHO_V = 7.5e-7;
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::node_t 
-	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 42;
-	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 142;
-	//FEM_module::ElementBoundary<P, I>::NUM_NODES = 19;
-	FEM_module::ElementBoundary<P, I>::NUM_NODES = 8;
-	
+	FEM_module::ElementBoundary<P, I>::NUM_NODES = NUM_NODES_G;
+
 int test2(){
-	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
+	FEM_module::ImporterMsh<double, long> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	const std::vector<std::vector<double>> coords = 
 		mesh_importer.node_matrix();
@@ -143,7 +145,7 @@ int test_quadrature(){
 
 int test_concentration_model_1(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/pear.msh");
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);
@@ -155,14 +157,75 @@ int test_concentration_model_1(){
 
 int test_concentration_model_2(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer("../Input/cylinder.msh");
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);
-	model.write_elements_to_file("elements");
-	model.write_boundaries_to_file("boundaries");
-	model.write_coordinates_to_file("coords");
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
 	model.solve_nonlinear_model();
+	return EXIT_SUCCESS;
+}
+
+int test_jacobian(){
+	std::vector<double> interior_point{0.01, 0.06};
+	gsl_vector* x;
+	gsl_vector* f_val;
+	gsl_permutation* permut;
+	gsl_matrix* jac;
+	gsl_matrix* jac_fd;
+	gsl_matrix* stiff;
+	gsl_matrix* inverse;
+	int signum = 0;
+	double norm_jac = 0;
+	double norm_delta = 0;
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+			interior_point);
+	x = gsl_vector_alloc(2*model.number_nodes());
+	f_val = gsl_vector_alloc(2*model.number_nodes());
+	permut = gsl_permutation_calloc(2*model.number_nodes());
+	for (size_t idx_0 = 0; idx_0 < model.number_nodes(); idx_0 ++){
+		gsl_vector_set(x, idx_0, 101300*0.208/(8.314*298.15));
+		gsl_vector_set(x, idx_0 + model.number_nodes(), 
+				101300*0.0004/(8.314*298.15));
+	}
+	jac = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+	jac_fd = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+	stiff = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+	inverse = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+
+	gsl_spmatrix_sp2d(stiff, model.stiffness_matrix());
+	FEM_module::NonLinearSystemFunctor<double, int> 
+		nls_functor(model, 3);
+	FEM_module::JacobianFunctor<double, int> 
+		jac_functor(model);
+	FEM_module::FiniteDifferenceFunctor<double, int> 
+		fd_functor(model, nls_functor, 1e-8);
+	for (int iter = 0; iter < 10; iter++){
+		jac_functor(x, NULL, jac);
+		fd_functor(x, NULL, jac_fd);
+		gsl_matrix_sub(jac, stiff);
+		gsl_matrix_sub(jac_fd, stiff);
+		for (size_t idx_1 = 0; idx_1 < jac->size1; idx_1++){
+			for (size_t idx_2 = 0; idx_2 < jac->size1; idx_2++){
+				norm_jac += std::pow(gsl_matrix_get(jac, idx_1, idx_2), 2);
+				norm_delta += std::pow(gsl_matrix_get(jac, idx_1, idx_2) -
+						gsl_matrix_get(jac_fd, idx_1, idx_2), 2);
+			}
+		}
+		std::cout<<"Norm Jacobian: "<<std::sqrt(norm_jac)<<std::endl<<
+			"Norm Difference: "<<std::sqrt(norm_delta)<<std::endl;
+		nls_functor(x, NULL, f_val);
+		gsl_linalg_LU_decomp(jac, permut, &signum);
+		gsl_linalg_LU_invert(jac, permut, inverse);
+		gsl_blas_dgemv(CblasNoTrans, -1.0, inverse, f_val, 1.0, x);
+	}
+	gsl_vector_free(x);
+	gsl_matrix_free(jac);
+	gsl_matrix_free(jac_fd);
 	return EXIT_SUCCESS;
 }
 

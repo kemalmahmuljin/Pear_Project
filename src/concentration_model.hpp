@@ -133,13 +133,12 @@ class ConcentrationModel{
 				bound.update_stiffness_matrix(coordinates_, 
 						*stiffness_matrix_);
 			}
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "elem_stiff");
 			return EXIT_SUCCESS;
 		}
 
 		int add_linear_approx_to_stiffness(){
 			for (auto elem : elements_){
-				elem.update_sp_with_linearized_int_2(coefficients_, coordinates_, 
+				elem.update_sp_with_jacobian(coefficients_, coordinates_, 
 						stiffness_matrix_);
 			}
 			return EXIT_SUCCESS;
@@ -155,7 +154,7 @@ class ConcentrationModel{
 		
 		int add_linear_approx_to_f_vector(){
 			for (auto elem : elements_){
-				elem.update_f_vector_with_linearized_integral_2(coefficients_,
+				elem.update_f_vector_with_linearized_integral(coefficients_,
 						coordinates_, *f_vector_);
 			}
 			return EXIT_SUCCESS;
@@ -235,19 +234,19 @@ class ConcentrationModel{
 			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model_LU();
 			gsl_vector_scale(f_vector_, -1.0);
-			FEM_module::write_vector_to_file(coefficients_, "initial_coeff_no_lin");
+			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
-			FEM_module::write_vector_to_file(f_vector_, "f_vector_lin");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector_lin");
 			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_lin");
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff_lin");
 			solve_linear_model_LU();
-			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
+			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff");
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff");
-			FEM_module::write_vector_to_file(f_vector_, "f_vector");
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
 
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 3);
@@ -270,7 +269,7 @@ class ConcentrationModel{
 						gsl_multiroot_fsolver_f(nonlinear_solver), 1e-9);
 				count++;
 			} while(condition != GSL_SUCCESS);
-			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
+			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
 			
 			gsl_multiroot_fsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
@@ -289,19 +288,19 @@ class ConcentrationModel{
 			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model_LU();
 			gsl_vector_scale(f_vector_, -1.0);
-			FEM_module::write_vector_to_file(coefficients_, "initial_coeff_no_lin");
+			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
-			FEM_module::write_vector_to_file(f_vector_, "f_vector_lin");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector_lin");
 			gsl_vector_scale(f_vector_, -1.0);
-			//add_linear_approx_to_stiffness();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff_lin");
+			add_linear_approx_to_stiffness();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff_lin");
 			solve_linear_model_LU();
-			FEM_module::write_vector_to_file(coefficients_, "initial_coeff");
+			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff");
 			
 			generate_stiffness_matrix();
 			generate_f_vector();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "stiff");
-			FEM_module::write_vector_to_file(f_vector_, "f_vector");
+			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
 
 			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
 				nls_functor(*this, 3);
@@ -329,7 +328,7 @@ class ConcentrationModel{
 						gsl_multiroot_fdfsolver_f(nonlinear_solver), 1e-9);
 				count++;
 			} while(condition != GSL_SUCCESS);
-			FEM_module::write_vector_to_file(coefficients_, "final_coeff");
+			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
 			
 			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;

@@ -65,6 +65,7 @@ class JacobianFunctor{
 		
 		int operator()(const gsl_vector* x, void* params,
 				gsl_matrix* j){
+			model_.set_coefficients(x);
 			gsl_spmatrix_sp2d(j, model_.stiffness_matrix());
 			model_.update_matrix_with_jacobian(j);
 			return EXIT_SUCCESS;
@@ -106,6 +107,7 @@ class FiniteDifferenceFunctor{
 		}
 		int operator()(const gsl_vector* x, void* params,
 				gsl_matrix* j){
+			model_.set_coefficients(x);
 			gsl_vector_memcpy(delta, x);
 			funct_(x, NULL, function_val);
 			for (size_t idx = 0; idx < j->size1; idx++){
