@@ -21,10 +21,10 @@
 #include "pear_functors.hpp"
 #endif
 
-double TEMP = -1 + 273.15;
+double TEMP = 25 + 273.15;
 int NUM_NODES_G = 529;
-double CON_O2 = 2.0/100.0;
-double CON_CO2 = 0.7/100.0;
+double CON_O2 = 20.8/100.0;
+double CON_CO2 = 0.4/100.0;
 std::string FILEPATH = "../Input/new_pear_2.msh";
 
 // Element values configuation
@@ -69,10 +69,10 @@ typename FEM_module::Element<P, I>::node_t
 
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*0.208/(8.314*TEMP);
+	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
 template <typename P, typename I>
 typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*0.0/(8.314*TEMP);
+	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
 
 // boundary values configuration
 template <typename P, typename I>
@@ -136,12 +136,67 @@ int test_quadrature(){
 	FEM_module::ElementTriangular<double, int> test_element(coords, nodes);
 	test_element.r_u(coeff, 0.5, 0.1);
 	test_element.r_v(coeff, 0.5, 0.1);
-	test_element.integrate_non_linear_term_3(coeff, coords, 15, result);
+	test_element.integrate_non_linear_term(coeff, coords, 15, result);
 
 	gsl_vector_free(coeff);
 	gsl_vector_free(result);
 	return EXIT_SUCCESS;
 };
+
+int test_linear_model(){
+	std::ifstream file_stream;
+	std::stringstream str_to_num;
+	std::string line;
+	std::vector<std::string> line_data;
+	gsl_vector* helper;
+	std::vector<double> interior_point{0.01, 0.06};
+	size_t count = 0;
+	double help_num = 0;
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+			interior_point);
+	model.generate_stiffness_matrix();
+	helper = gsl_vector_alloc((size_t)(2*model.number_nodes()));
+	
+	file_stream.open("../output/f_calc");
+	std::getline(file_stream, line);
+	line_data = FEM_module::split(line, ' ');
+	for (auto val : line_data){
+		std::cout<<val<<std::endl;
+		str_to_num << val;
+		str_to_num >> help_num;
+		gsl_vector_set(helper, count, help_num);
+		str_to_num.clear();
+		count++;
+	}
+	count = 0;
+	file_stream.close();
+	model.set_f_vector(helper);
+	FEM_module::write_vector_to_file(helper, "f_cal_loaded");
+	file_stream.open("../output/calculated_coeff");
+	std::getline(file_stream, line);
+	line_data = FEM_module::split(line, ' ');
+	for (auto val : line_data){
+		str_to_num << val;
+		str_to_num >> help_num;
+		gsl_vector_set(helper, count, help_num);
+		str_to_num.clear();
+		count++;
+	}
+	file_stream.close();
+	
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.solve_linear_model_LU();
+	FEM_module::write_vector_to_file(model.coefficients(), 
+			"../output/initial_coeff");
+	gsl_vector_sub(helper, model.coefficients());
+	std::cout<<FEM_module::vector_to_string(helper);
+	return EXIT_SUCCESS;
+	
+}
 
 int test_concentration_model_1(){
 	std::vector<double> interior_point{0.01, 0.06};
@@ -150,7 +205,6 @@ int test_concentration_model_1(){
 	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
 			interior_point);
 	model.generate_stiffness_matrix();
-	model.generate_f_vector();
 	model.solve_linear_model();
 	return EXIT_SUCCESS;
 }
@@ -187,7 +241,7 @@ int test_jacobian(){
 	x = gsl_vector_alloc(2*model.number_nodes());
 	f_val = gsl_vector_alloc(2*model.number_nodes());
 	permut = gsl_permutation_calloc(2*model.number_nodes());
-	for (size_t idx_0 = 0; idx_0 < model.number_nodes(); idx_0 ++){
+	for (size_t idx_0 = 0; idx_0 < (size_t)model.number_nodes(); idx_0 ++){
 		gsl_vector_set(x, idx_0, 101300*0.208/(8.314*298.15));
 		gsl_vector_set(x, idx_0 + model.number_nodes(), 
 				101300*0.0004/(8.314*298.15));
@@ -230,11 +284,6 @@ int test_jacobian(){
 }
 
 int main(){
-	//Create ConcentrationModel
-	//Initialize Concentration model wjit the elements
-	//ConcentrationModel.create_non_linear()
-	//ConentrationModel.solve()
-	
-	test_concentration_model_2();
+	test_linear_model();
 	return EXIT_SUCCESS;
 }

@@ -385,7 +385,7 @@ class ElementTriangular : public Element<P, I>{
 						r1 + (r2 - r1)*epsilon + (r3 - r1)*eta);
 		}
 
-		int integrate_non_linear_term_3(const gsl_vector* coefficients,
+		int integrate_non_linear_term(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				size_t points, gsl_vector* result_vector){
 			precision_t result_u;
@@ -1159,14 +1159,7 @@ class ElementTriangular : public Element<P, I>{
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates, 
 				global_vect_t& vector_f){
-			node_t n_1 = this->nodes_[0];
-			node_t n_2 = this->nodes_[1];
-			node_t n_3 = this->nodes_[2];
-			precision_t r1 = coordinates[n_1][0];
-			precision_t r2 = coordinates[n_2][0];
-			precision_t r3 = coordinates[n_3][0];
-
-			integrate_non_linear_term_3(coefficients, coordinates, 1, 
+			integrate_non_linear_term(coefficients, coordinates, 1, 
 					&vector_f);
 			
 			precision_t result_uu;
@@ -1174,11 +1167,9 @@ class ElementTriangular : public Element<P, I>{
 			precision_t result_vu;
 			precision_t result_vv;
 			size_t node_1;
-			size_t node_2;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 					node_1 = this->nodes_[node_idx];	
-					node_2 = this->nodes_[coeff_idx - 1];	
 					result_uu = (
 						diff_integrand_u(0.5, 0, coefficients, coordinates,
 							node_idx, coeff_idx) + 

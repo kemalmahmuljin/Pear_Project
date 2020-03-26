@@ -111,7 +111,7 @@ class ImporterMsh : public Importer<P, I>{
 			for (mesh_size_t block = 1; block <= node_blocks; block++){
 				std::getline(file_stream, line);
 				line_data = split(line, ' ');
-				nodes_in_block = stol(line_data[3]);
+				nodes_in_block = stoi(line_data[3]);
 				// skipping node tags
 				skiped_lines = 0;
 				while (skiped_lines < nodes_in_block){
@@ -165,7 +165,7 @@ class ImporterMsh : public Importer<P, I>{
 			for (mesh_size_t block = 1; block <= elem_blocks; block++){
 				std::getline(file_stream, line);
 				line_data = split(line, ' ');
-				elems_in_block = stol(line_data[3]);
+				elems_in_block = stoi(line_data[3]);
 				elems_type = stoi(line_data[2]);
 				for (mesh_size_t i = 0; i < elems_in_block; i++){
 					std::vector<mesh_size_t> element_data;
@@ -174,7 +174,7 @@ class ImporterMsh : public Importer<P, I>{
 					if (elems_type == 1){
 						for (int i = 1; i < 3; i++){
 
-							element_data.push_back(stol(line_data[i]) - 1);
+							element_data.push_back(stoi(line_data[i]) - 1);
 						} 
 						this->boundary_matrix_.push_back(element_data);
 					}
@@ -247,7 +247,6 @@ std::ostream& operator<<(std::ostream& os, ImporterMsh<P, I>& importer) {
     }
     os<<std::endl<<"Boundary Num - node 1 - node 2"<<std::endl;
 	count = 1;
-	int cond = 0;
     for (auto elem : importer.boundary_matrix()) {
 		os<<"Boundary "<<count<<" - "<<elem[0]<<" - "<<elem[1]<<std::endl;
 		count++;

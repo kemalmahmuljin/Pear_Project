@@ -207,6 +207,14 @@ int write_matrix_to_file(const gsl_spmatrix* mtrx, std::string filename){
 	return EXIT_SUCCESS;
 }
 
+int write_den_matrix_to_file(const gsl_matrix* mtrx, std::string filename){
+	std::ofstream myfile;
+	myfile.open(filename, std::ios::out);
+	myfile<<matrix_to_string(mtrx);
+	myfile.close();	
+	return EXIT_SUCCESS;
+}
+
 int write_vector_to_file(const gsl_vector* vect, std::string filename){
 	std::ofstream myfile;
 	myfile.open(filename, std::ios::out);

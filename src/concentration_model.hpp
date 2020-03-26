@@ -121,6 +121,11 @@ class ConcentrationModel{
 			gsl_vector_memcpy(coefficients_, source);
 			return EXIT_SUCCESS;
 		}
+		
+		int set_f_vector(const gsl_vector* source){
+			gsl_vector_memcpy(f_vector_, source);
+			return EXIT_SUCCESS;
+		}
 
 		// Functionality
 		int generate_stiffness_matrix(){
@@ -171,7 +176,7 @@ class ConcentrationModel{
 		int	get_integral_vector(size_t cuad_points){
 			gsl_vector_set_all(helper_, 0.0);
 			for (auto elem : elements_){
-				elem.integrate_non_linear_term_3(coefficients_, coordinates_,
+				elem.integrate_non_linear_term(coefficients_, coordinates_,
 						cuad_points, helper_);
 			}
 			return EXIT_SUCCESS;
@@ -187,7 +192,6 @@ class ConcentrationModel{
 				gsl_splinalg_itersolve_alloc(itersolve_type, 
 						2*number_nodes_, 0);
 			size_t iter = 0;
-			precision_t residual;
 			int status;
 
 			gsl_vector_set_zero(coefficients_);
@@ -196,7 +200,6 @@ class ConcentrationModel{
 			do{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
 						f_vector_, tolerance, coefficients_, work);
-				residual = gsl_splinalg_itersolve_normr(work);
 				if (status == GSL_SUCCESS)
 					fprintf(stderr, "Converged\n");
 			}
@@ -209,8 +212,8 @@ class ConcentrationModel{
 
 		int solve_linear_model_LU(){
 			int status;
-			gsl_matrix* dense_stiff = gsl_matrix_alloc((size_t)(2*number_nodes_), 
-					(size_t)(2*number_nodes_));
+			gsl_matrix* dense_stiff = gsl_matrix_alloc(
+					(size_t)(2*number_nodes_), (size_t)(2*number_nodes_));
 			gsl_spmatrix_sp2d(dense_stiff, stiffness_matrix_);
 			gsl_permutation* permut = gsl_permutation_alloc((size_t)(2*number_nodes_));
 			gsl_linalg_LU_decomp(dense_stiff, permut, &status);
