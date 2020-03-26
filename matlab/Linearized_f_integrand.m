@@ -67,11 +67,11 @@ function [F] = Linearized_f_integrand(elements, coords, epsilon, eta, coefficien
 		rvv =  RESP_Q*ruv;
 
         % updating F vector with partial derivatives
-        F(n1) = F(n1) + r*(ruu*c_u + ruv*c_v)*phi_1*jac;
-        F(n2) = F(n2) + r*(ruu*c_u + ruv*c_v)*phi_2*jac;
-        F(n3) = F(n3) + r*(ruu*c_u + ruv*c_v)*phi_3*jac;
-        F(n1 + nodes) = F(n1 + nodes) - r*(rvu*c_u + rvv*c_v)*phi_1*jac;
-        F(n2 + nodes) = F(n2 + nodes) - r*(rvu*c_u + rvv*c_v)*phi_2*jac;
-        F(n3 + nodes) = F(n3 + nodes) - r*(rvu*c_u + rvv*c_v)*phi_3*jac;       
+        F(n1) = F(n1) - r*(ruu*c_u + ruv*c_v)*phi_1*jac;
+        F(n2) = F(n2) - r*(ruu*c_u + ruv*c_v)*phi_2*jac; %ruv*c_v
+        F(n3) = F(n3) - r*(ruu*c_u + ruv*c_v)*phi_3*jac;
+        F(n1 + nodes) = F(n1 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_1*jac;
+        F(n2 + nodes) = F(n2 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_2*jac;
+        F(n3 + nodes) = F(n3 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_3*jac;       
     end
 end

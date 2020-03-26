@@ -6,9 +6,6 @@ elements = elements(:, 1:3);
 coords = dlmread('../output/coords', ' ', 1, 0);
 coords = coords(:, 1:2);
 
-%% Test
-stiffness = dlmread('../output/stiff', ' ', 1, 0);
-stiffness = stiffness(:, 1:end - 1);
 %% Declaring some constants
 % Tuneable parameters
 TEMP = 25;
@@ -50,9 +47,7 @@ VAR(6) = RESP_Q;
 %% Start of program
 
 [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
-% spy(matrix1);
 [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
-% spy(matrixb2);
 [f1, f2] = Boundary_vector(boundaries, coords, C, R);
 Initial_C1 = -(matrix1 + matrixb1)\f1;
 Initial_C2 = -(matrix2 + matrixb2)\f2;
@@ -71,8 +66,39 @@ F = F/6;
 % Creating new linear system that contains linearization
 mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
 mat_lin = mat + Jacobian;
-F_lin = [f1;f2] + F;
-C_lin = -mat_lin\F_lin;
+f_vector = - [f1;f2];
+F_lin =  f_vector - F;
+C_lin = mat_lin\F_lin;
+% dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+% dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
+
+% Executing the nonlinear solver with the calculated starting coefficient
+options = optimoptions(@fsolve,'Display','iter',...
+    'Algorithm','trust-region',...
+    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0);
+[x,fval,exitflag,output] = fsolve(@model_func,C_lin,options);
 
 
-
+function [f, J] = model_func(coefficients)
+    %variables needed in this scope
+    elements = dlmread('../output/elements', ' ', 1, 0);
+    elements = elements(:, 1:3);
+    coords = dlmread('../output/coords', ' ', 1, 0);
+    coords = coords(:, 1:2);
+    
+    VAR = zeros(6,1);
+    VAR(1) = V_MU;
+    VAR(2) = K_MV;
+    VAR(3) = K_MU;
+    VAR(4) = K_MFU;
+    VAR(5) = MAX_FERM_CO2;
+    VAR(6) = RESP_Q;
+    
+    [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
+    [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
+    stiffness = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
+    [f1, f2] = Boundary_vector(boundaries, coords, C, R);
+    f_vector = [f1;f2];
+    
+    [f, J] = model(elements, coords, coefficients, VAR, stiffness, f_vector);
+end
