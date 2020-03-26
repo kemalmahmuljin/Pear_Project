@@ -1,33 +1,32 @@
-clear all
-clc
+
 
 global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
 
 
-boundaries = dlmread('../src/boundaries', ' ', 1, 0);
+boundaries = dlmread('../output/boundaries', ' ', 1, 0);
 boundaries = boundaries(:, 1:3);
-elements = dlmread('../src/elements', ' ', 1, 0);
+elements = dlmread('../output/elements', ' ', 1, 0);
 elements = elements(:, 1:3);
-coords = dlmread('../src/coords', ' ', 1, 0);
+coords = dlmread('../output/coords', ' ', 1, 0);
 coords = coords(:, 1:2);
 
-stiffness = dlmread('../src/stiff', ' ', 1, 0);
+stiffness = dlmread('../output/stiff', ' ', 1, 0);
 stiffness = stiffness(:, 1:end - 1);
-stiffness_lin = dlmread('../src/stiff_lin', ' ', 1, 0);
+stiffness_lin = dlmread('../output/stiff_lin', ' ', 1, 0);
 stiffness_lin = stiffness_lin(:, 1:end - 1);
-fvector = dlmread('../src/f_vector', ' ', 1, 0);
+fvector = dlmread('../output/f_vector', ' ', 1, 0);
 fvector = fvector(:, 1:end - 1)';
-fvector_lin = dlmread('../src/f_vector_lin', ' ', 1, 0);
+fvector_lin = dlmread('../output/f_vector_lin', ' ', 1, 0);
 fvector_lin = fvector_lin(:, 1:end - 1)';
 
-x0 = dlmread('../src/initial_coeff', ' ', 1, 0);
+x0 = dlmread('../output/initial_coeff', ' ', 1, 0);
 x0= x0(:, 1:end - 1)';
 
 %model_function(x0)
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
     'SpecifyObjectiveGradient',true,'PrecondBandWidth',0);
-[x,fval,exitflag,output] = fsolve(@model_function,zeros(length(x0),1),options);
+[x,fval,exitflag,output] = fsolve(@model_function,x0,options);
 
 function int_val = integrand(coefficients, epsilon, eta)
 global elements boundaries coords fvector fvector_lin stiffness stiffness_lin
