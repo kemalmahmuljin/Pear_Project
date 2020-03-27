@@ -76,29 +76,34 @@ C_lin = mat_lin\F_lin;
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
     'SpecifyObjectiveGradient',true,'PrecondBandWidth',0);
-[x,fval,exitflag,output] = fsolve(@model_func,C_lin,options);
+
+model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
+	mat, f_vector)
+[x,fval,exitflag,output] = fsolve(model_func,C_lin,options);
 
 
-function [f, J] = model_func(coefficients)
-    %variables needed in this scope
-    elements = dlmread('../output/elements', ' ', 1, 0);
-    elements = elements(:, 1:3);
-    coords = dlmread('../output/coords', ' ', 1, 0);
-    coords = coords(:, 1:2);
-    
-    VAR = zeros(6,1);
-    VAR(1) = V_MU;
-    VAR(2) = K_MV;
-    VAR(3) = K_MU;
-    VAR(4) = K_MFU;
-    VAR(5) = MAX_FERM_CO2;
-    VAR(6) = RESP_Q;
-    
-    [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
-    [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
-    stiffness = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
-    [f1, f2] = Boundary_vector(boundaries, coords, C, R);
-    f_vector = [f1;f2];
-    
-    [f, J] = model(elements, coords, coefficients, VAR, stiffness, f_vector);
-end
+
+
+%function [f, J] = model_func(coefficients)
+%    %variables needed in this scope
+%    elements = dlmread('../output/elements', ' ', 1, 0);
+%    elements = elements(:, 1:3);
+%    coords = dlmread('../output/coords', ' ', 1, 0);
+%    coords = coords(:, 1:2);
+%    
+%    VAR = zeros(6,1);
+%    VAR(1) = V_MU;
+%    VAR(2) = K_MV;
+%    VAR(3) = K_MU;
+%    VAR(4) = K_MFU;
+%    VAR(5) = MAX_FERM_CO2;
+%    VAR(6) = RESP_Q;
+%    
+%    [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
+%    [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
+%    stiffness = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
+%    [f1, f2] = Boundary_vector(boundaries, coords, C, R);
+%    f_vector = [f1;f2];
+%    
+%    [f, J] = model(elements, coords, coefficients, VAR, stiffness, f_vector);
+%end
