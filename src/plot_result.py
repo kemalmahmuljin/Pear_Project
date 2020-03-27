@@ -70,6 +70,10 @@ if __name__ == "__main__":
     f2_str = f2_str[f2_str.find('\n') + 1:]
     f2_stream = StringIO(f2_str)
     f2_vector = np.loadtxt(f2_stream)
+    
+    cc_vector = np.loadtxt("../output/calculated_coeff")
+    
+    fc_vector = np.loadtxt("../output/f_calc")
 
     cond = args.function_to_plot[0]
     print(cond)
@@ -83,6 +87,10 @@ if __name__ == "__main__":
         to_plot = f2_vector
     elif cond == "f_non_lin":
         to_plot = f2_vector-f_vector
+    elif cond == "f_calc":
+        to_plot = fc_vector
+    elif cond == "calc_coef":
+        to_plot = cc_vector
     else:
         print("Error in the input argument use -h for help")
         exit()
