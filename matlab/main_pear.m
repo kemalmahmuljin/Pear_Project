@@ -44,6 +44,40 @@ VAR(4) = K_MFU;
 VAR(5) = MAX_FERM_CO2;
 VAR(6) = RESP_Q;
 
+%% Test cases to check boundary
+%{
+% TEST coeff
+CU = ones(529,1);
+CV = ones(529,1);
+CU = CU*10;
+CV = CV/10;
+TESTC = [CU;CV];
+% Ambient Coeff
+U = ones(529,1)*C(1,1);
+V = ones(529,1)*C(2,1);
+CC = [U;V];
+
+%stiffness 1
+[matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
+[matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
+mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
+%F 1
+FLIN = mat*TESTC;
+[f1, f2] = Boundary_vector(boundaries, coords, TESTC, R);
+FLIN = [f1; f2];
+dlmwrite('../output/f_vector',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/f_vector',FLIN','delimiter',' ','precision',12,'-append');
+
+%stiffness 2
+Jacobian = jacobian_integrand(elements, coords, 0.5, 0, CC, VAR) ...
+         + jacobian_integrand(elements, coords, 0, 0.5, CC, VAR) ...
+         + jacobian_integrand(elements, coords, 0.5, 0.5, CC, VAR);
+Jacobian = Jacobian/6; 
+mat =Jacobian;
+TESTF = mat*TESTC;
+dlmwrite('../output/f_vector_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/f_vector_lin',TESTF','delimiter',' ','precision',12,'-append');
+%}
 %% Start of program
 
 [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
@@ -68,9 +102,9 @@ mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix
 mat_lin = mat + Jacobian;
 f_vector = - [f1;f2];
 F_lin =  f_vector - F;
-C_lin = mat_lin\F_lin;
-% dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
+C_lin = mat\F_lin;
+dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
 
 % Executing the nonlinear solver with the calculated starting coefficient
 options = optimoptions(@fsolve,'Display','iter',...
