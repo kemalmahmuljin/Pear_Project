@@ -3,6 +3,7 @@
 #define IMPORTER_HPP
 #include "importer.hpp"
 #include <cmath>
+#include <cstdlib>
 #include <string>
 #endif
 
@@ -142,6 +143,67 @@ int test_quadrature(){
 	gsl_vector_free(result);
 	return EXIT_SUCCESS;
 };
+
+int test_pure_diffusion(){
+	std::vector<double> interior_point{0.01, 0.06};
+	gsl_vector* sol_c;
+	gsl_vector* f_vec_mult;
+	double c_u_a;
+	double c_v_a;
+	double condition = 0;
+	double f_norm = 0;
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+			interior_point);
+	model.generate_stiffness_matrix();
+	sol_c = gsl_vector_alloc((size_t)(2*model.number_nodes()));
+	f_vec_mult = gsl_vector_calloc((size_t)(2*model.number_nodes()));
+	while(condition < 1e-1){
+		c_u_a = (double)rand()/(double)RAND_MAX;
+		c_v_a = (double)rand()/(double)RAND_MAX;
+		FEM_module::ElementBoundary<double, int>::C_U_AMB = c_u_a;
+		FEM_module::ElementBoundary<double, int>::C_V_AMB = c_v_a;
+		model.generate_f_vector();
+		for (size_t idx = 0; idx < model.number_nodes(); idx++){
+			gsl_vector_set(sol_c, idx, c_u_a);
+			gsl_vector_set(sol_c, idx + model.number_nodes(), c_v_a);
+		}
+		gsl_spblas_dgemv(CblasNoTrans, 1.0, model.stiffness_matrix(), sol_c, 
+				0.0, f_vec_mult);
+		gsl_vector_add(f_vec_mult, model.f_vector());
+		condition = 0;
+		f_norm = 0;
+		for (size_t idx = 0; idx < model.number_nodes(); idx++){
+			f_norm += pow(gsl_vector_get(model.f_vector(), idx), 2) +
+				pow(gsl_vector_get(model.f_vector(), 
+							idx + model.number_nodes()),2);
+			condition += pow(gsl_vector_get(f_vec_mult, idx), 2) + 
+				pow(gsl_vector_get(f_vec_mult, idx + 
+							model.number_nodes()), 2);
+		}
+		condition = sqrt(condition/f_norm);
+		std::cout<<condition<<std::endl;
+	}
+	return EXIT_SUCCESS;
+};
+int test_constant_resp(){
+	gsl_vector* helper;
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+			interior_point);
+	model.generate_stiffness_matrix();
+	model.generate_f_vector();
+	helper = gsl_vector_alloc((size_t)(2*model.number_nodes()));
+	gsl_vector_set_all(helper, 3e-18);
+	gsl_vector_add(helper, model.f_vector());
+	gsl_vector_scale(helper, -1.0);
+	model.set_f_vector(helper);
+	model.solve_linear_model_LU();
+	FEM_module::write_vector_to_file(model.coefficients(), "../output/initial_coeff");
+}
 
 int test_linear_model(){
 	std::ifstream file_stream;
@@ -284,6 +346,6 @@ int test_jacobian(){
 }
 
 int main(){
-	test_linear_model();
+	test_concentration_model_2();
 	return EXIT_SUCCESS;
 }
