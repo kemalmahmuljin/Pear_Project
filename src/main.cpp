@@ -222,32 +222,47 @@ int test_linear_model(){
 	helper = gsl_vector_alloc((size_t)(2*model.number_nodes()));
 	
 	file_stream.open("../output/f_calc");
-	std::getline(file_stream, line);
-	line_data = FEM_module::split(line, ' ');
-	for (auto val : line_data){
-		std::cout<<val<<std::endl;
-		str_to_num << val;
-		str_to_num >> help_num;
-		gsl_vector_set(helper, count, help_num);
-		str_to_num.clear();
-		count++;
-	}
+    while (std::getline(file_stream, line)) {
+		if (line == "4"){}
+		else {
+			line_data = FEM_module::split(line, ' ');
+			for (auto val : line_data){
+				std::cout<<val<<std::endl;
+				str_to_num << val;
+				str_to_num >> help_num;
+				gsl_vector_set(helper, count, help_num);
+				str_to_num.clear();
+				count++;
+			}
+
+		}
+
+    }
 	count = 0;
 	file_stream.close();
-	model.set_f_vector(helper);
+	//model.set_f_vector(helper);
+
 	FEM_module::write_vector_to_file(helper, "f_cal_loaded");
 	file_stream.open("../output/calculated_coeff");
 	std::getline(file_stream, line);
-	line_data = FEM_module::split(line, ' ');
-	for (auto val : line_data){
-		str_to_num << val;
-		str_to_num >> help_num;
-		gsl_vector_set(helper, count, help_num);
-		str_to_num.clear();
-		count++;
-	}
-	file_stream.close();
+    while (std::getline(file_stream, line)) {
+		if (line == "4"){}
+		else {
+			line_data = FEM_module::split(line, ' ');
+			for (auto val : line_data){
+				std::cout<<val<<std::endl;
+				str_to_num << val;
+				str_to_num >> help_num;
+				gsl_vector_set(helper, count, help_num);
+				str_to_num.clear();
+				count++;
+			}
+
+		}
+
+    }
 	
+	model.set_f_vector(helper);
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
