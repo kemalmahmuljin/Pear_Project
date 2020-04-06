@@ -6,13 +6,15 @@ elements = elements(:, 1:3);
 coords = dlmread('../output/coords', ' ', 1, 0);
 coords = coords(:, 1:2);
 
+
+
 %% Declaring some constants
 % Tuneable parameters
 TEMP = 25;
 nu = 20.8/100.0;
 nv = 0.04/100.0;
 % General constants
-Rg = 8.134;
+Rg = 8.314;
 TREF = 273.15;
 V_MU = 2.39e-4*exp((80200/Rg)*(1/TREF - 1/(TREF + TEMP)));
 K_MV = 27.2438;
@@ -23,10 +25,10 @@ RESP_Q = 0.97;
 patm = 101300; 
 % sigma's
 S  = zeros(2,2);
-S(1,1) = 2.8 * 10 ^ (-10);
-S(1,2) = 1.1 * 10 ^ (-9);
-S(2,1) = 2.32 * 10 ^ (-9);
-S(2,2) = 6.97 * 10 ^ (-9);
+S(1,1) = 2.8 * 10 ^ (-10); % sur
+S(1,2) = 1.1 * 10 ^ (-9); % suz 
+S(2,1) = 2.32 * 10 ^ (-9); % svr
+S(2,2) = 6.97 * 10 ^ (-9); % svz
 % respirations
 R = zeros(2,1);
 R(1,1) = 7 * 10 ^ (-7);
@@ -78,6 +80,18 @@ TESTF = mat*TESTC;
 dlmwrite('../output/f_vector_lin',4,'delimiter',' ','precision',12,'-append');
 dlmwrite('../output/f_vector_lin',TESTF','delimiter',' ','precision',12,'-append');
 %}
+
+%% Another test
+[matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
+[matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
+mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
+[f1, f2] = Boundary_vector(boundaries, coords, C, R);
+CONSTANT = ones(2*529,1);
+CONSTANT = 3*CONSTANT*10^-19;
+F = [f1;f2] + CONSTANT;
+C_lin = - mat\F;
+dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
 %% Start of program
 
 [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
@@ -96,12 +110,13 @@ F = Linearized_f_integrand(elements, coords, 0.5, 0, C, VAR) ...
          + Linearized_f_integrand(elements, coords, 0, 0.5, C, VAR) ...
          + Linearized_f_integrand(elements, coords, 0.5, 0.5, C, VAR);
 F = F/6;
-
+CONSTANT = ones(2*529,1);
+CONSTANT = 3*CONSTANT;
 % Creating new linear system that contains linearization
 mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
 mat_lin = mat + Jacobian;
 f_vector = - [f1;f2];
-F_lin =  f_vector - F;
+F_lin =  f_vector - CONSTANT;
 C_lin = mat\F_lin;
 dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
 dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
