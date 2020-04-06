@@ -24,10 +24,10 @@ def plot_coeff(coords, coeff):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('function_to_plot', type=str, nargs='+',
-            help=("Function to plot: initial_c: Initial coefficients \nfinal_c:"
-            " Final coefficients \nf_vector: Constant vector \nf_vector_lin:"
-            " Constant vector + linearized term \n f_non_lin: Linearized non"
-            "linear addition to f vector"))
+            help=("Function to plot: \n initial_c: Initial coefficients \n final_c: "
+            " Final coefficients \n  f_vector: Constant vector \n f_vector_lin: "
+            " Constant vector + linearized term \n f_non_lin: Linearized non "
+            " linear addition to f vector \n MC_lin: Linearized Matlab coefficient"))
     
     args = parser.parse_args()
     
@@ -70,6 +70,16 @@ if __name__ == "__main__":
     f2_str = f2_str[f2_str.find('\n') + 1:]
     f2_stream = StringIO(f2_str)
     f2_vector = np.loadtxt(f2_stream)
+    
+    cc_vector = np.loadtxt("../output/calculated_coeff")
+    
+    fc_vector = np.loadtxt("../output/f_calc")
+
+    MC_file = open("../output/MC_lin", 'r')
+    MC_str = MC_file.read()
+    MC_str = MC_str[MC_str.find('\n') + 1:]
+    MC_stream = StringIO(MC_str)
+    MC_vector = np.loadtxt(MC_stream)
 
     cond = args.function_to_plot[0]
     print(cond)
@@ -83,6 +93,12 @@ if __name__ == "__main__":
         to_plot = f2_vector
     elif cond == "f_non_lin":
         to_plot = f2_vector-f_vector
+    elif cond == "f_calc":
+        to_plot = fc_vector
+    elif cond == "calc_coef":
+        to_plot = cc_vector
+    elif cond == "MC_lin":
+        to_plot = MC_vector 
     else:
         print("Error in the input argument use -h for help")
         exit()

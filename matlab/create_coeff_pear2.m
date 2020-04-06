@@ -1,4 +1,4 @@
-%% Importing everythin
+%% Importing everything
 boundaries = dlmread('output/boundaries', ' ', 1, 0);
 boundaries = boundaries(:, 1:3);
 elements = dlmread('output/elements', ' ', 1, 0);
