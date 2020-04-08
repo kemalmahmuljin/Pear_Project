@@ -95,7 +95,7 @@ dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
 dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
 %}
 %% Generating linearly increasing Coefficients in R and testing magnitude
-%{
+%%{
 x0 = dlmread('../output/calculated_coeff');
 % x0 = (3*x0);
 [matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
@@ -120,36 +120,31 @@ F_diffusion = matb*x0';
 [f1, f2] = Boundary_vector(boundaries, coords, C, R);
 Initial_C1 = -(matrix1 + matrixb1)\f1;
 Initial_C2 = -(matrix2 + matrixb2)\f2;
-C_start = [Initial_C1; Initial_C2];
-% dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',C','delimiter',' ','precision',12,'-append');
-% Calculating contribution of nonlinear term around ambient concentrations
-Jacobian = jacobian_integrand(elements, coords, 0.5, 0  , C_start, VAR) ...
-         + jacobian_integrand(elements, coords, 0  , 0.5, C_start, VAR) ...
-         + jacobian_integrand(elements, coords, 0.5, 0.5, C_start, VAR);
-Jacobian = Jacobian/6;    
-F =        Linearized_f_integrand(elements, coords, 0.5, 0  , C_start, VAR) ...
-         + Linearized_f_integrand(elements, coords, 0  , 0.5, C_start, VAR) ...
-         + Linearized_f_integrand(elements, coords, 0.5, 0.5, C_start, VAR);
-F = F/6;
-mat1 = [(matrix1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 ) ];
+C = [Initial_C1; Initial_C2];
 
+% Calculating contribution of nonlinear term around ambient concentrations
+Jacobian = jacobian_integrand(elements, coords, 0.5, 0, C, VAR) ...
+         + jacobian_integrand(elements, coords, 0, 0.5, C, VAR) ...
+         + jacobian_integrand(elements, coords, 0.5, 0.5, C, VAR);
+Jacobian = Jacobian/6;    
+F = Linearized_f_integrand(elements, coords, 0.5, 0, C, VAR) ...
+         + Linearized_f_integrand(elements, coords, 0, 0.5, C, VAR) ...
+         + Linearized_f_integrand(elements, coords, 0.5, 0.5, C, VAR);
+F = F/6;
 % Creating new linear system that contains linearization
 mat = [(matrix1 + matrixb1), zeros(size(coords,1));zeros(size(coords,1)),(matrix2 + matrixb2) ];
 mat_lin = mat + Jacobian;
 f_vector = - [f1;f2];
 F_lin =  f_vector - F;
 C_lin = mat_lin\F_lin;
-%print this
-% C_lin = F;
 dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-dlmwrite('../output/MC_lin',C_lin,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
 
 % Executing the nonlinear solver with the calculated starting coefficient
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
-    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0) ;%, ...
-    %'FunctionTolerance', 10e-22, 'OptimalityTolerance', 15e-21);%, ...
+    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0, ...
+    'FunctionTolerance', 10e-22, 'OptimalityTolerance', 15e-21);%, ...
     %'PlotFcn', 'optimplotstepsize');
 
 model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
