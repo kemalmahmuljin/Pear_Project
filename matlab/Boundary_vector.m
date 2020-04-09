@@ -1,7 +1,7 @@
 function [f1, f2] = Boundary_vector(boundaries, coords, C, R)
      
-    R_u = R(1,1);
-    R_v = R(2,1);    
+    rho_u = R(1,1);
+    rho_v = R(2,1);    
     Cuamb = C(1,1);
     Cvamb = C(2,1); 
     
@@ -23,10 +23,10 @@ function [f1, f2] = Boundary_vector(boundaries, coords, C, R)
             k1 = (r1/3 + r2/6)*len;
             k2 = (r2/3 + r1/6)*len;
             % Updating f_vector
-            f1(n1) = f1(n1) - R_u*Cuamb*k1;
-            f1(n2) = f1(n2) - R_u*Cuamb*k2;
-            f2(n1) = f2(n1) - R_v*Cvamb*k1;
-            f2(n2) = f2(n2) - R_v*Cvamb*k2;             
+            f1(n1) = f1(n1) - rho_u*Cuamb*k1;
+            f1(n2) = f1(n2) - rho_u*Cuamb*k2;
+            f2(n1) = f2(n1) - rho_v*Cvamb*k1;
+            f2(n2) = f2(n2) - rho_v*Cvamb*k2;             
         end
     end
 end
