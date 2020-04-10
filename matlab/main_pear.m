@@ -15,12 +15,13 @@ nu = 20.8/100.0;
 nv = 0.04/100.0;
 % General constants
 Rg = 8.314;
-TREF = 273.15;
-V_MU = 2.39e-4*exp((80200/Rg)*(1/TREF - 1/(TREF + TEMP)));
+TREF = 293.15; % found another bug
+T0 = 273.15;
+V_MU = 2.39e-4*exp((80200/Rg)*(1/TREF - 1/(T0 + TEMP)));
 K_MV = 27.2438;
 K_MU = 0.4103;
 K_MFU = 0.1149;
-MAX_FERM_CO2 = 1.61e-4*exp((56700/Rg)*(1/TREF - 1/(TREF + TEMP)));
+MAX_FERM_CO2 = 1.61e-4*exp((56700/Rg)*(1/TREF - 1/(T0 + TEMP)));
 RESP_Q = 0.97;
 patm = 101300; 
 % sigma's
@@ -35,8 +36,8 @@ R(1,1) = 7 * 10 ^ (-7);
 R(2,1) = 7.5 * 10 ^ (-7);
 % Ambient concentrations
 C = zeros(2,1);
-C(1,1) = patm*nu/(Rg*(TREF + TEMP));
-C(2,1) = patm*nv/(Rg*(TREF + TEMP));
+C(1,1) = patm*nu/(Rg*(T0 + TEMP));
+C(2,1) = patm*nv/(Rg*(T0 + TEMP));
 % Setting VAR
 VAR = zeros(6,1);
 VAR(1) = V_MU;
@@ -141,15 +142,15 @@ f_vector = - [f1;f2];
 F_lin =  f_vector - F;
 C_lin = mat_lin\F_lin;
 %print this
-% C_lin = F;
+% C_lin =F;
 dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
 dlmwrite('../output/MC_lin',C_lin,'delimiter',' ','precision',12,'-append');
 
 % Executing the nonlinear solver with the calculated starting coefficient
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
-    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0) ;%, ...
-    %'FunctionTolerance', 10e-22, 'OptimalityTolerance', 15e-21);%, ...
+    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0 , ...
+    'FunctionTolerance', 1e-20, 'OptimalityTolerance', 5e-19);%, ...
     %'PlotFcn', 'optimplotstepsize');
 
 model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
