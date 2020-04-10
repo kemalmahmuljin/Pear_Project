@@ -4,6 +4,7 @@
 #include "importer.hpp"
 #include <cmath>
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #endif
 
@@ -29,84 +30,84 @@ double CON_CO2 = 0.4/100.0;
 std::string FILEPATH = "../Input/new_pear_2.msh";
 
 // Element values configuation
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::SIGMA_UR = 2.8e-10;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::SIGMA_UZ = 1.10e-9;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::SIGMA_VR = 2.32e-9;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::SIGMA_VZ = 6.97e-9;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::RESP_Q = 0.97;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::MAX_FERM_CO2 = 1.61e-4*exp(
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::SIGMA_UR = 2.8e-10;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::SIGMA_UZ = 1.10e-9;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::SIGMA_VR = 2.32e-9;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::SIGMA_VZ = 6.97e-9;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::RESP_Q = 0.97;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::MAX_FERM_CO2 = 1.61e-4*exp(
 			(56700/8.314)*(1/293.15 - 1/TEMP));
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::K_MFU = 0.1149;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::K_MU = 0.4103;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::K_MV = 27.2438;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::V_MU = 2.39e-4*exp(
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::K_MFU = 0.1149;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::K_MU = 0.4103;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::K_MV = 27.2438;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::V_MU = 2.39e-4*exp(
 			(80200/8.314)*(1/293.15 - 1/TEMP));
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementTriangular<P, I>::NUM_ELM = 0;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementTriangular<P, I>::NUM_NODES = NUM_NODES_G;
+template <typename P>
+typename FEM_module::Element<P>::node_t 
+	FEM_module::ElementTriangular<P>::NUM_ELM = 0;
+template <typename P>
+typename FEM_module::Element<P>::node_t 
+	FEM_module::ElementTriangular<P>::NUM_NODES = NUM_NODES_G;
 
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementTriangular<P, I>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementTriangular<P>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
 
 // boundary values configuration
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::RHO_U = 7e-7;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::precision_t 
-	FEM_module::ElementBoundary<P, I>::RHO_V = 7.5e-7;
-template <typename P, typename I>
-typename FEM_module::Element<P, I>::node_t 
-	FEM_module::ElementBoundary<P, I>::NUM_NODES = NUM_NODES_G;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementBoundary<P>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementBoundary<P>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementBoundary<P>::RHO_U = 7e-7;
+template <typename P>
+typename FEM_module::Element<P>::precision_t 
+	FEM_module::ElementBoundary<P>::RHO_V = 7.5e-7;
+template <typename P>
+typename FEM_module::Element<P>::node_t 
+	FEM_module::ElementBoundary<P>::NUM_NODES = NUM_NODES_G;
 
 int test2(){
-	FEM_module::ImporterMsh<double, long> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	const std::vector<std::vector<double>> coords = 
 		mesh_importer.node_matrix();
-	std::vector<long> nodes_from_element;
+	std::vector<size_t> nodes_from_element;
 	std::cout<<"Node Num - x - y"<<std::endl;
-	long count = 1;
+	size_t count = 1;
     for (auto elem : coords) {
 		std::cout<<"Node "<<count<<" - "<<elem[0]<<" - "<<elem[1]<<std::endl;
 		count++;
     }
 	std::cout<<std::endl;
 	for (auto elem : mesh_importer.element_matrix()){
-		FEM_module::ElementTriangular<double, long> temp_element(coords, elem);
+		FEM_module::ElementTriangular<double> temp_element(coords, elem);
 		nodes_from_element = temp_element.nodes();
 		for (int i = 0; i < 3; i++){
 			std::cout<<nodes_from_element[i]<<" ";
@@ -117,11 +118,11 @@ int test2(){
 }
 int test_quadrature(){
 	std::vector<std::vector<double>> coords;
-	std::vector<int> nodes;
+	std::vector<size_t> nodes;
 	gsl_vector* coeff = gsl_vector_alloc(6);
 	gsl_vector* result = gsl_vector_alloc(6);
 	gsl_vector_set_all(coeff, 1.0);
-	for (int i = 0; i < 3; i++){
+	for (size_t i = 0; i < 3; i++){
 		nodes.push_back(i);
 		if (i == 0){
 			coords.push_back(std::vector<double>({0.34, 1.2}));
@@ -133,11 +134,11 @@ int test_quadrature(){
 			coords.push_back(std::vector<double>({3.66, 2.50}));
 		}
 	}
-	FEM_module::ElementTriangular<double, int>::NUM_NODES = 3;
-	FEM_module::ElementTriangular<double, int> test_element(coords, nodes);
+	FEM_module::ElementTriangular<double>::NUM_NODES = 3;
+	FEM_module::ElementTriangular<double> test_element(coords, nodes);
 	test_element.r_u(coeff, 0.5, 0.1);
 	test_element.r_v(coeff, 0.5, 0.1);
-	test_element.integrate_non_linear_term(coeff, coords, 15, result);
+	test_element.integrate_non_linear_term(coeff, coords, result);
 
 	gsl_vector_free(coeff);
 	gsl_vector_free(result);
@@ -152,9 +153,9 @@ int test_pure_diffusion(){
 	double c_v_a;
 	double condition = 0;
 	double f_norm = 0;
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.generate_stiffness_matrix();
 	sol_c = gsl_vector_alloc((size_t)(2*model.number_nodes()));
@@ -162,8 +163,8 @@ int test_pure_diffusion(){
 	while(condition < 1e-1){
 		c_u_a = (double)rand()/(double)RAND_MAX;
 		c_v_a = (double)rand()/(double)RAND_MAX;
-		FEM_module::ElementBoundary<double, int>::C_U_AMB = c_u_a;
-		FEM_module::ElementBoundary<double, int>::C_V_AMB = c_v_a;
+		FEM_module::ElementBoundary<double>::C_U_AMB = c_u_a;
+		FEM_module::ElementBoundary<double>::C_V_AMB = c_v_a;
 		model.generate_f_vector();
 		for (size_t idx = 0; idx < model.number_nodes(); idx++){
 			gsl_vector_set(sol_c, idx, c_u_a);
@@ -190,9 +191,9 @@ int test_pure_diffusion(){
 int test_constant_resp(){
 	gsl_vector* helper;
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.generate_stiffness_matrix();
 	model.generate_f_vector();
@@ -201,6 +202,8 @@ int test_constant_resp(){
 	gsl_vector_add(helper, model.f_vector());
 	gsl_vector_scale(helper, -1.0);
 	model.set_f_vector(helper);
+	FEM_module::write_matrix_to_file(model.stiffness_matrix(), "../output/stiff");
+	FEM_module::write_vector_to_file(model.f_vector(), "../output/f_vector");
 	model.solve_linear_model_LU();
 	FEM_module::write_vector_to_file(model.coefficients(), "../output/initial_coeff");
 }
@@ -214,9 +217,9 @@ int test_linear_model(){
 	std::vector<double> interior_point{0.01, 0.06};
 	size_t count = 0;
 	double help_num = 0;
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.generate_stiffness_matrix();
 	helper = gsl_vector_alloc((size_t)(2*model.number_nodes()));
@@ -234,9 +237,7 @@ int test_linear_model(){
 				str_to_num.clear();
 				count++;
 			}
-
 		}
-
     }
 	count = 0;
 	file_stream.close();
@@ -257,9 +258,7 @@ int test_linear_model(){
 				str_to_num.clear();
 				count++;
 			}
-
 		}
-
     }
 	
 	model.set_f_vector(helper);
@@ -277,9 +276,9 @@ int test_linear_model(){
 
 int test_concentration_model_1(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.generate_stiffness_matrix();
 	model.solve_linear_model();
@@ -288,9 +287,22 @@ int test_concentration_model_1(){
 
 int test_concentration_model_2(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.solve_nonlinear_model();
+	return EXIT_SUCCESS;
+}
+
+int test_concentration_model_3(){
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
@@ -311,9 +323,9 @@ int test_jacobian(){
 	int signum = 0;
 	double norm_jac = 0;
 	double norm_delta = 0;
-	FEM_module::ImporterMsh<double, int> mesh_importer(FILEPATH);
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double, int> model(mesh_importer, 
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	x = gsl_vector_alloc(2*model.number_nodes());
 	f_val = gsl_vector_alloc(2*model.number_nodes());
@@ -329,11 +341,11 @@ int test_jacobian(){
 	inverse = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
 
 	gsl_spmatrix_sp2d(stiff, model.stiffness_matrix());
-	FEM_module::NonLinearSystemFunctor<double, int> 
-		nls_functor(model, 3);
-	FEM_module::JacobianFunctor<double, int> 
+	FEM_module::NonLinearSystemFunctor<double> 
+		nls_functor(model);
+	FEM_module::JacobianFunctor<double> 
 		jac_functor(model);
-	FEM_module::FiniteDifferenceFunctor<double, int> 
+	FEM_module::FiniteDifferenceFunctor<double> 
 		fd_functor(model, nls_functor, 1e-8);
 	for (int iter = 0; iter < 10; iter++){
 		jac_functor(x, NULL, jac);

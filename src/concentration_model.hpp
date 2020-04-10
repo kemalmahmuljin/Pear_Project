@@ -26,20 +26,20 @@
 
 namespace FEM_module{
 
-template<typename P, typename I>
+template<typename P>
 class NonLinearSystemFunctor;
 
-template<typename P, typename I>
+template<typename P>
 class JacobianFunctor;
 
-template<typename P, typename I>
+template<typename P>
 class ConcentrationModel{
 	public:
 		typedef P precision_t;
-		typedef I node_t;
+		typedef size_t node_t;
 		typedef std::vector<std::vector<precision_t>> coord_mtx_t;
-		typedef std::vector<FEM_module::ElementTriangular<P, I>> elem_list_t;
-		typedef std::vector<FEM_module::ElementBoundary<P, I>> bound_list_t;
+		typedef std::vector<FEM_module::ElementTriangular<P>> elem_list_t;
+		typedef std::vector<FEM_module::ElementBoundary<P>> bound_list_t;
 	private:
 		node_t number_elements_;
 		node_t number_boundaries_;
@@ -52,7 +52,7 @@ class ConcentrationModel{
 		gsl_vector* helper_;
 		gsl_spmatrix* stiffness_matrix_;
 	public:
-		ConcentrationModel(Importer<precision_t, node_t>& importer, 
+		ConcentrationModel(Importer<precision_t>& importer, 
 				std::vector<precision_t>& interior_point)
 		: number_elements_()
 		, number_boundaries_()
@@ -78,12 +78,12 @@ class ConcentrationModel{
 			coefficients_ = gsl_vector_calloc((size_t)(2*number_nodes_));
 			coordinates_ = importer.node_matrix();
 			for (auto elem : importer.element_matrix()){
-				FEM_module::ElementTriangular<precision_t, node_t> 
+				FEM_module::ElementTriangular<precision_t> 
 					temp_element(coordinates_, elem);
 				elements_.push_back(temp_element);
 			}
 			for (auto elem : importer.boundary_matrix()){
-				FEM_module::ElementBoundary<precision_t, node_t> 
+				FEM_module::ElementBoundary<precision_t> 
 					temp_boundary(coordinates_, elem, interior_point);
 				boundaries_.push_back(temp_boundary);
 			}	
@@ -132,11 +132,11 @@ class ConcentrationModel{
 			gsl_spmatrix_set_zero(stiffness_matrix_);
 			for (auto elem : elements_){
 				elem.update_stiffness_matrix(coordinates_, 
-						*stiffness_matrix_);
+						stiffness_matrix_);
 			}
 			for (auto bound : boundaries_){
 				bound.update_stiffness_matrix(coordinates_, 
-						*stiffness_matrix_);
+						stiffness_matrix_);
 			}
 			return EXIT_SUCCESS;
 		}
@@ -152,7 +152,7 @@ class ConcentrationModel{
 		int generate_f_vector(){
 			gsl_vector_set_zero(f_vector_);
 			for (auto bound : boundaries_){
-				bound.update_vector_f(coordinates_, *f_vector_);
+				bound.update_vector_f(coordinates_, f_vector_);
 			}
 			return EXIT_SUCCESS;
 		}
@@ -160,11 +160,20 @@ class ConcentrationModel{
 		int add_linear_approx_to_f_vector(){
 			for (auto elem : elements_){
 				elem.update_f_vector_with_linearized_integral(coefficients_,
-						coordinates_, *f_vector_);
+						coordinates_, f_vector_);
 			}
 			return EXIT_SUCCESS;
 		}
 		
+		int add_constants_to_f(precision_t const_1, precision_t const_2){
+			for (node_t i = 0; i < number_nodes_; i++){
+				gsl_vector_set(f_vector_, i, const_1 + 
+						gsl_vector_get(f_vector_, i));
+				gsl_vector_set(f_vector_, i + number_nodes_, const_2 + 
+						gsl_vector_get(f_vector_, i + number_nodes_));
+			}
+		}
+
 		int update_matrix_with_jacobian(gsl_matrix* matrix_to_update){
 			for (auto elem : elements_){
 				elem.update_with_jacobian(coefficients_, 
@@ -173,13 +182,73 @@ class ConcentrationModel{
 			return EXIT_SUCCESS;
 		}
 
-		int	get_integral_vector(size_t cuad_points){
+		int	get_integral_vector(){
 			gsl_vector_set_all(helper_, 0.0);
 			for (auto elem : elements_){
 				elem.integrate_non_linear_term(coefficients_, coordinates_,
-						cuad_points, helper_);
+						helper_);
 			}
 			return EXIT_SUCCESS;
+		}
+
+		node_t get_element_from_boundarie(const std::vector<node_t>& nodes){
+			node_t count = 0;
+			for (auto elem : elements_){
+				if (elem.has_nodes(nodes)){
+					return count;
+				}
+				count++;
+			}
+			return -1;
+		}
+		
+		int get_coeff_vals_from_element(node_t element_num, precision_t r, 
+				precision_t z, std::vector<precision_t>& coeff){
+			elements_[element_num].get_cons_at(r, z, coordinates_, 
+				coefficients_, coeff);
+			return EXIT_SUCCESS;
+		}
+
+		int get_coeff_vals_at(precision_t r, precision_t z,
+				std::vector<precision_t>& coeff){
+			bool found_flag = false;
+			for (auto elem : elements_){
+				if (elem.is_point_interior(r, z, coordinates_)){
+					elem.get_cons_at(r, z, coordinates_, coefficients_, 
+							coeff);
+					found_flag = true;
+					break;
+				}
+			}
+			if (found_flag){
+				return EXIT_SUCCESS;
+			} else{
+				return EXIT_FAILURE;
+			}
+		}
+
+		int check_boundary_cond(const precision_t sig_u_r, 
+				const precision_t sig_u_z, const precision_t sig_v_r, 
+				const precision_t sig_uz, const precision_t rho_u, 
+				const precision_t rho_v){
+			std::vector<precision_t> coeff_1;
+			std::vector<precision_t> coeff_2;
+			std::vector<precision_t> grad;
+			std::vector<precision_t> norm_cords;
+			precision_t val_1;
+			precision_t val_2;
+			node_t el_num;
+			for (auto bound : boundaries_){
+				el_num = get_element_from_boundarie(bound.nodes());
+				assert(el_num != -1);
+				bound.get_normal_dir_coords(coordinates_, norm_cords);
+				get_coeff_vals_from_element(el_num, norm_cords[0], 
+						norm_cords[1], coeff_1);
+				bound.get_midpoint_val(coordinates_, coefficients_, coeff_2);
+				val_1 = (sig_u_r*(coeff_1[0]-coeff_2[0]) +
+						sig_u_z*(coeff_1[1]-coeff_2[1]))/(0.5*bound.length());
+
+			}
 		}
 
 		int solve_linear_model(){
@@ -224,6 +293,35 @@ class ConcentrationModel{
 			return EXIT_SUCCESS;
 		}
 
+		int generate_initial_codition_cont_resp(precision_t const_1, 
+				precision_t const_2){
+			generate_stiffness_matrix();
+			generate_f_vector();
+			add_constants_to_f(const_1, const_2);
+			gsl_vector_scale(f_vector_, -1.0);
+			solve_linear_model_LU();
+			gsl_vector_scale(f_vector_, -1.0);
+			FEM_module::write_vector_to_file(coefficients_, 
+					"../output/initial_coeff_no_lin");
+			add_linear_approx_to_f_vector();
+			FEM_module::write_vector_to_file(f_vector_, 
+					"../output/f_vector_lin");
+			gsl_vector_scale(f_vector_, -1.0);
+			add_linear_approx_to_stiffness();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, 
+					"../output/stiff_lin");
+			solve_linear_model_LU();
+			FEM_module::write_vector_to_file(coefficients_, 
+					"../output/initial_coeff");
+			
+			generate_stiffness_matrix();
+			generate_f_vector();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, 
+					"../output/stiff");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
+		
+		}
+		
 		int solve_nonlinear_model_fd(){
 			int condition = 0;
 			const gsl_multiroot_fsolver_type* nonlinear_solver_type;
@@ -231,28 +329,11 @@ class ConcentrationModel{
 			gsl_multiroot_fsolver* nonlinear_solver = 
 				gsl_multiroot_fsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
-			
-			generate_stiffness_matrix();
-			generate_f_vector();
-			gsl_vector_scale(f_vector_, -1.0);
-			solve_linear_model_LU();
-			gsl_vector_scale(f_vector_, -1.0);
-			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff_no_lin");
-			add_linear_approx_to_f_vector();
-			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector_lin");
-			gsl_vector_scale(f_vector_, -1.0);
-			add_linear_approx_to_stiffness();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff_lin");
-			solve_linear_model_LU();
-			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff");
-			
-			generate_stiffness_matrix();
-			generate_f_vector();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff");
-			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
 
-			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-				nls_functor(*this, 3);
+			generate_initial_codition_cont_resp(0.0, 0.0);
+
+			FEM_module::NonLinearSystemFunctor<precision_t> 
+				nls_functor(*this);
 			struct solver_params params = {};
 			params.func = &nls_functor;
 			gsl_multiroot_function nls_function;
@@ -286,28 +367,11 @@ class ConcentrationModel{
 				gsl_multiroot_fdfsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
 			
-			generate_stiffness_matrix();
-			generate_f_vector();
-			gsl_vector_scale(f_vector_, -1.0);
-			solve_linear_model_LU();
-			gsl_vector_scale(f_vector_, -1.0);
-			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff_no_lin");
-			add_linear_approx_to_f_vector();
-			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector_lin");
-			gsl_vector_scale(f_vector_, -1.0);
-			add_linear_approx_to_stiffness();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff_lin");
-			solve_linear_model_LU();
-			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff");
-			
-			generate_stiffness_matrix();
-			generate_f_vector();
-			FEM_module::write_matrix_to_file(stiffness_matrix_, "../output/stiff");
-			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
+			generate_initial_codition_cont_resp(0.0e-6, 0.0e-6);
 
-			FEM_module::NonLinearSystemFunctor<precision_t, node_t> 
-				nls_functor(*this, 3);
-			FEM_module::JacobianFunctor<precision_t, node_t> 
+			FEM_module::NonLinearSystemFunctor<precision_t> 
+				nls_functor(*this);
+			FEM_module::JacobianFunctor<precision_t> 
 				jac_functor(*this);
 			struct solver_params params = {};
 			params.func = &nls_functor;
@@ -396,8 +460,8 @@ std::ostream& operator<<(std::ostream& os, const gsl_vector* vect){
     return os;
 }
 
-template <typename P, typename I>
-std::ostream& operator<<(std::ostream& os, ConcentrationModel<P, I>& model){
+template <typename P>
+std::ostream& operator<<(std::ostream& os, ConcentrationModel<P>& model){
     //os<<"Stiffness Matrix"<<std::endl;
 	//os<<model.stiffness_matrix()<<std::endl;
     //os<<"Vector f"<<std::endl;

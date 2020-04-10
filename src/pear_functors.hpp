@@ -19,22 +19,20 @@
 
 namespace FEM_module{
 
-template<typename P, typename I>
+template<typename P>
 class ConcentrationModel;
 
-template<typename P, typename I>
+template<typename P>
 class NonLinearSystemFunctor{
 	public:
 		typedef P precision_t;
-		typedef I node_t;
+		typedef size_t node_t;
 	private:
-		FEM_module::ConcentrationModel<precision_t, node_t>& model_;
-		size_t quad_points_;
+		FEM_module::ConcentrationModel<precision_t>& model_;
 	public:
-		NonLinearSystemFunctor(FEM_module::ConcentrationModel<precision_t, 
-				node_t>& model, size_t quad_points)
+		NonLinearSystemFunctor(
+				FEM_module::ConcentrationModel<precision_t>& model)
 		: model_(model)
-		, quad_points_(quad_points)
 		{}
 		
 		int operator()(const gsl_vector* x, void* params,
@@ -44,22 +42,21 @@ class NonLinearSystemFunctor{
 			gsl_spblas_dgemv(CblasNoTrans, 1.0, model_.stiffness_matrix(), 
 					x, 0.0, f);
 			gsl_vector_add(f, model_.f_vector());
-			model_.get_integral_vector(quad_points_);
+			model_.get_integral_vector();
 			gsl_vector_add(f, model_.helper());
 			return EXIT_SUCCESS;
 		}
 };
 
-template<typename P, typename I>
+template<typename P>
 class JacobianFunctor{
 	public:
 		typedef P precision_t;
-		typedef I node_t;
+		typedef size_t node_t;
 	private:
-		FEM_module::ConcentrationModel<precision_t, node_t>& model_;
+		FEM_module::ConcentrationModel<precision_t>& model_;
 	public:
-		JacobianFunctor(FEM_module::ConcentrationModel<precision_t, 
-				node_t>& model)
+		JacobianFunctor(FEM_module::ConcentrationModel<precision_t>& model)
 		: model_(model)
 		{}
 		
@@ -72,23 +69,24 @@ class JacobianFunctor{
 		}
 };
 
-template<typename P, typename I>
+template<typename P>
 class FiniteDifferenceFunctor{
 	public:
 		typedef P precision_t;
-		typedef I node_t;
+		typedef size_t node_t;
 	private:
-		FEM_module::ConcentrationModel<precision_t, node_t>& model_;
-		FEM_module::NonLinearSystemFunctor<precision_t, node_t>& funct_;
+		FEM_module::ConcentrationModel<precision_t>& model_;
+		FEM_module::NonLinearSystemFunctor<precision_t>& funct_;
 		precision_t epsilon_;
 		gsl_vector* delta;
 		gsl_vector* function_val;
 		gsl_vector* function_val_delta;
 		gsl_matrix* stiff_;
 	public:
-		FiniteDifferenceFunctor(FEM_module::ConcentrationModel<precision_t, 
-				node_t>& model, FEM_module::NonLinearSystemFunctor<precision_t, 
-				node_t>& funct, precision_t epsilon)
+		FiniteDifferenceFunctor(
+				FEM_module::ConcentrationModel<precision_t>& model, 
+				FEM_module::NonLinearSystemFunctor<precision_t>& funct, 
+				precision_t epsilon)
 		: model_(model)
 		, funct_(funct)
 		, epsilon_(epsilon){
@@ -126,16 +124,16 @@ class FiniteDifferenceFunctor{
 };
 
 struct solver_params {
-	FEM_module::NonLinearSystemFunctor<double, int>* func;
-	FEM_module::JacobianFunctor<double, int>* jac;
+	FEM_module::NonLinearSystemFunctor<double>* func;
+	FEM_module::JacobianFunctor<double>* jac;
 };
 
 extern "C" int non_linear_function(const gsl_vector* x, void *param, 
 		gsl_vector* f){
 	struct FEM_module::solver_params* parameters = 
 		(struct FEM_module::solver_params*)param;
-	NonLinearSystemFunctor<double, int> *my_functor =
-		(NonLinearSystemFunctor<double, int> *)parameters->func;
+	NonLinearSystemFunctor<double> *my_functor =
+		(NonLinearSystemFunctor<double> *)parameters->func;
 	return (*my_functor)(x, NULL, f);
 }
 
@@ -143,8 +141,8 @@ extern "C" int jacobian_function(const gsl_vector* x, void *param,
 		gsl_matrix* j){
 	struct FEM_module::solver_params* parameters = 
 		(struct FEM_module::solver_params*)param;
-	JacobianFunctor<double, int> *my_functor =
-		(JacobianFunctor<double, int>*)parameters->jac;
+	JacobianFunctor<double> *my_functor =
+		(JacobianFunctor<double>*)parameters->jac;
 	return (*my_functor)(x, NULL, j);
 }
 
@@ -152,10 +150,10 @@ extern "C" int fdf_function(const gsl_vector* x, void *param,
 		gsl_vector* f, gsl_matrix* j){
 	struct FEM_module::solver_params* parameters = 
 		(struct FEM_module::solver_params*)param;
-	NonLinearSystemFunctor<double, int>* my_functor1 =
-		(NonLinearSystemFunctor<double, int>*)parameters->func;
-	JacobianFunctor<double, int>* my_functor2 =
-		(JacobianFunctor<double, int> *)parameters->jac;
+	NonLinearSystemFunctor<double>* my_functor1 =
+		(NonLinearSystemFunctor<double>*)parameters->func;
+	JacobianFunctor<double>* my_functor2 =
+		(JacobianFunctor<double> *)parameters->jac;
 	(*my_functor1)(x, NULL, f);
 	(*my_functor2)(x, NULL, j);
 	return EXIT_SUCCESS;

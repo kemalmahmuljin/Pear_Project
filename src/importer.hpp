@@ -8,11 +8,11 @@
 namespace FEM_module{
 
 std::vector<std::string> split(const std::string& input, char delimiter);
-template <typename P, typename I>
+template <typename P>
 class Importer{
 	public:
 		typedef P precision_t;
-		typedef I mesh_size_t;
+		typedef size_t mesh_size_t;
 		typedef std::vector<std::vector<precision_t>> coord_vector_t;
 		typedef std::vector<std::vector<mesh_size_t>> element_vector_t;
 	protected:
@@ -60,19 +60,19 @@ class Importer{
 
 };
 
-template <typename P, typename I>
-class ImporterMsh : public Importer<P, I>{
+template <typename P>
+class ImporterMsh : public Importer<P>{
 	public:
-		using typename Importer<P, I>::precision_t;
-		using typename Importer<P, I>::mesh_size_t;
-		using typename Importer<P, I>::coord_vector_t;
-		using typename Importer<P, I>::element_vector_t;
+		using typename Importer<P>::precision_t;
+		using typename Importer<P>::mesh_size_t;
+		using typename Importer<P>::coord_vector_t;
+		using typename Importer<P>::element_vector_t;
 	public:
 		ImporterMsh()
-		: Importer<P, I>()
+		: Importer<P>()
 		{}
 		ImporterMsh(std::string file_path)
-		: Importer<P, I>(file_path)
+		: Importer<P>(file_path)
 		{}
 
 		const coord_vector_t& node_matrix(){
@@ -225,15 +225,15 @@ std::vector<std::string> split(const std::string& input, char delimiter){
 	return tokens;
 }
 
-template <typename P, typename I>
-std::ostream& operator<<(std::ostream& os, ImporterMsh<P, I>& importer) {
+template <typename P>
+std::ostream& operator<<(std::ostream& os, ImporterMsh<P>& importer) {
 	/*
 	Preguntar por que no puedo usar const, tira error arriba en los getters. 
 	Pero no puedo acceder a los elementos de clase con el punto, necesito 
 	dereferenciar con ->
 	*/
     os<<"Node Num - x - y"<<std::endl;
-	I count = 1;
+	size_t count = 1;
     for (auto elem : importer.node_matrix()) {
 		os<<"Node "<<count<<" - "<<elem[0]<<" - "<<elem[1]<<std::endl;
 		count++;
@@ -258,7 +258,7 @@ std::ostream& operator<<(std::ostream& os, ImporterMsh<P, I>& importer) {
 
 int test1(){
 	/* Test to check the correct reading of a file */
-	FEM_module::ImporterMsh<double, long> mesh_importer("../Input/pear.msh");
+	FEM_module::ImporterMsh<double> mesh_importer("../Input/pear.msh");
 	mesh_importer.process_file();
 	std::cout<<mesh_importer<<std::endl;
 	return 0;
