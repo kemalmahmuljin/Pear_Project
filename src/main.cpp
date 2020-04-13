@@ -31,7 +31,7 @@ double TEMP = 25 + 273.15;
 int NUM_NODES_G = 142;
 double CON_O2 = 20.8/100.0;
 double CON_CO2 = 0.4/100.0;
-std::string FILEPATH = "..\\Input\\pear_3.msh";
+std::string FILEPATH = "../Input/pear_3.msh";
 
 // Element values configuation
 template <typename P>
