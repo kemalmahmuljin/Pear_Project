@@ -219,8 +219,8 @@ class ElementTriangular : public Element<P>{
 					(size_t)this->nodes_[1] + NUM_NODES);
 			precision_t c_v_3 = gsl_vector_get(coefficients, 
 					(size_t)this->nodes_[2] + NUM_NODES);
-			precision_t c_u = c_u_1*p_1 + c_u_2*p_2+c_u_3*p_3;
-			precision_t c_v = c_v_1*p_1 + c_v_2*p_2+c_v_3*p_3;
+			precision_t c_u = c_u_1*p_1 + c_u_2*p_2 + c_u_3*p_3;
+			precision_t c_v = c_v_1*p_1 + c_v_2*p_2 + c_v_3*p_3;
 			return V_MU*c_u/((K_MU + c_u)*(1.0 + c_v/K_MV));
 		}
 
@@ -300,7 +300,7 @@ class ElementTriangular : public Element<P>{
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx){
 			/*
-			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z) for the domain 
+			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z)*J for the domain
 			 * omega transformed to a rectangular domain with boundaries [0,1]
 			 * and [0,1], it saves the results for phi_j (j=1:3) inside 
 			 * integrand_res.
@@ -805,10 +805,10 @@ class ElementTriangular : public Element<P>{
 		int update_sp_with_jacobian(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_spmatrix* result_matrix){
-			precision_t result_uu;
-			precision_t result_uv;
-			precision_t result_vu;
-			precision_t result_vv;
+			precision_t result_uu = 0;
+			precision_t result_uv = 0;
+			precision_t result_vu = 0;
+			precision_t result_vv = 0;
 			size_t node_1;
 			size_t node_2;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
@@ -973,10 +973,10 @@ class ElementTriangular : public Element<P>{
 				global_vect_t* vector_f){
 			integrate_non_linear_term(coefficients, coordinates, vector_f);
 			
-			precision_t result_uu;
-			precision_t result_uv;
-			precision_t result_vu;
-			precision_t result_vv;
+			precision_t result_uu = 0;
+			precision_t result_uv = 0;
+			precision_t result_vu = 0;
+			precision_t result_vv = 0;
 			size_t node_1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){

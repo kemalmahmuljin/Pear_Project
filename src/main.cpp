@@ -61,7 +61,7 @@ typename FEM_module::Element<P>::precision_t
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
 	FEM_module::ElementTriangular<P>::V_MU = 2.39e-4*exp(
-			(80200/8.314)*(1/293.15 - 1/TEMP));
+			(80200/8.314)*(1.0/293.15 - 1.0/TEMP));
 template <typename P>
 typename FEM_module::Element<P>::node_t 
 	FEM_module::ElementTriangular<P>::NUM_ELM = 0;
@@ -71,18 +71,18 @@ typename FEM_module::Element<P>::node_t
 
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
-	FEM_module::ElementTriangular<P>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
+	FEM_module::ElementTriangular<P>::C_U_AMB = 101300.0*CON_O2/(8.314*TEMP);
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
-	FEM_module::ElementTriangular<P>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
+	FEM_module::ElementTriangular<P>::C_V_AMB = 101300.0*CON_CO2/(8.314*TEMP);
 
 // boundary values configuration
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
-	FEM_module::ElementBoundary<P>::C_U_AMB = 101300*CON_O2/(8.314*TEMP);
+	FEM_module::ElementBoundary<P>::C_U_AMB = 101300.0*CON_O2/(8.314*TEMP);
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
-	FEM_module::ElementBoundary<P>::C_V_AMB = 101300*CON_CO2/(8.314*TEMP);
+	FEM_module::ElementBoundary<P>::C_V_AMB = 101300.0*CON_CO2/(8.314*TEMP);
 template <typename P>
 typename FEM_module::Element<P>::precision_t 
 	FEM_module::ElementBoundary<P>::RHO_U = 7e-7;
@@ -206,6 +206,7 @@ int test_constant_resp(){
 	FEM_module::write_vector_to_file(model.f_vector(), "../output/f_vector");
 	model.solve_linear_model_LU();
 	FEM_module::write_vector_to_file(model.coefficients(), "../output/initial_coeff");
+	return EXIT_SUCCESS;
 }
 
 int test_linear_model(){
@@ -271,7 +272,6 @@ int test_linear_model(){
 	gsl_vector_sub(helper, model.coefficients());
 	std::cout<<FEM_module::vector_to_string(helper);
 	return EXIT_SUCCESS;
-	
 }
 
 int test_concentration_model_1(){
@@ -307,8 +307,20 @@ int test_concentration_model_3(){
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
-	model.solve_nonlinear_model();
+	model.solve_stepped_nonlinear_model(14);
 	return EXIT_SUCCESS;
+}
+
+int test_no_o2(){
+	FEM_module::ElementBoundary<double>::C_U_AMB = 0.0;
+	FEM_module::ElementTriangular<double>::C_U_AMB = 0.0;
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.solve_nonlinear_model();
+
 }
 
 int test_jacobian(){

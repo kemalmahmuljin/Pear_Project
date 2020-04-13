@@ -1,5 +1,6 @@
 #include <gsl/gsl_multiroots.h>
 
+#include <iostream>
 #include <vector>
 #include <gsl/gsl_spmatrix.h>
 #include <gsl/gsl_vector.h>
@@ -299,7 +300,8 @@ class ConcentrationModel{
 			generate_f_vector();
 			add_constants_to_f(const_1, const_2);
 			gsl_vector_scale(f_vector_, -1.0);
-			solve_linear_model_LU();
+			solve_linear_model();
+			//gsl_vector_scale(coefficients_, 0.17);
 			gsl_vector_scale(f_vector_, -1.0);
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
@@ -310,7 +312,7 @@ class ConcentrationModel{
 			add_linear_approx_to_stiffness();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff_lin");
-			solve_linear_model_LU();
+			solve_linear_model();
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff");
 			
@@ -321,7 +323,32 @@ class ConcentrationModel{
 			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
 		
 		}
+
+		int generate_initial_codition(){
+			gsl_vector_scale(f_vector_, -1.0);
+			solve_linear_model();
+			gsl_vector_scale(f_vector_, -1.0);
+			FEM_module::write_vector_to_file(coefficients_, 
+					"../output/initial_coeff_no_lin");
+			add_linear_approx_to_f_vector();
+			FEM_module::write_vector_to_file(f_vector_, 
+					"../output/f_vector_lin");
+			gsl_vector_scale(f_vector_, -1.0);
+			add_linear_approx_to_stiffness();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, 
+					"../output/stiff_lin");
+			solve_linear_model();
+			FEM_module::write_vector_to_file(coefficients_, 
+					"../output/initial_coeff");
+			
+			generate_stiffness_matrix();
+			generate_f_vector();
+			FEM_module::write_matrix_to_file(stiffness_matrix_, 
+					"../output/stiff");
+			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
 		
+		}
+
 		int solve_nonlinear_model_fd(){
 			int condition = 0;
 			const gsl_multiroot_fsolver_type* nonlinear_solver_type;
@@ -329,8 +356,10 @@ class ConcentrationModel{
 			gsl_multiroot_fsolver* nonlinear_solver = 
 				gsl_multiroot_fsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
+			generate_stiffness_matrix();
+			generate_f_vector();
 
-			generate_initial_codition_cont_resp(0.0, 0.0);
+			generate_initial_codition();
 
 			FEM_module::NonLinearSystemFunctor<precision_t> 
 				nls_functor(*this);
@@ -366,8 +395,10 @@ class ConcentrationModel{
 			gsl_multiroot_fdfsolver* nonlinear_solver = 
 				gsl_multiroot_fdfsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
+			generate_stiffness_matrix();
+			generate_f_vector();
 			
-			generate_initial_codition_cont_resp(0.0e-6, 0.0e-6);
+			generate_initial_codition();
 
 			FEM_module::NonLinearSystemFunctor<precision_t> 
 				nls_functor(*this);
@@ -396,6 +427,67 @@ class ConcentrationModel{
 				count++;
 			} while(condition != GSL_SUCCESS);
 			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
+			
+			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
+			return EXIT_SUCCESS;
+		}
+
+		int solve_stepped_nonlinear_model(int n_steps){
+			int condition = 0;
+			const gsl_multiroot_fdfsolver_type* nonlinear_solver_type;
+			nonlinear_solver_type = gsl_multiroot_fdfsolver_newton;
+			gsl_multiroot_fdfsolver* nonlinear_solver = 
+				gsl_multiroot_fdfsolver_alloc(nonlinear_solver_type,
+						(size_t)(2*number_nodes_));
+			
+			FEM_module::ElementBoundary<precision_t>::C_U_AMB *= 1.0/n_steps;
+			FEM_module::ElementBoundary<precision_t>::C_V_AMB *= 1.0/n_steps;
+			FEM_module::ElementTriangular<precision_t>::C_U_AMB *= 1.0/n_steps;
+			FEM_module::ElementTriangular<precision_t>::C_V_AMB *= 1.0/n_steps;
+			generate_stiffness_matrix();
+			generate_f_vector();
+
+			gsl_vector_scale(f_vector_, -1.0);
+			solve_linear_model();
+			gsl_vector_scale(f_vector_, -1.0);
+
+			FEM_module::NonLinearSystemFunctor<precision_t> 
+				nls_functor(*this);
+			FEM_module::JacobianFunctor<precision_t> 
+				jac_functor(*this);
+			struct solver_params params = {};
+			params.func = &nls_functor;
+			params.jac = &jac_functor;
+			gsl_multiroot_function_fdf nls_function;
+			nls_function.f = &FEM_module::non_linear_function;
+			nls_function.df = &FEM_module::jacobian_function;
+			nls_function.fdf = &FEM_module::fdf_function;
+			nls_function.n = 2*number_nodes_;
+			nls_function.params = &params;
+			
+			for (int step = 0; step < n_steps; step++){
+				gsl_multiroot_fdfsolver_set(nonlinear_solver, &nls_function, 
+						coefficients_);
+				int count = 1;
+				do {
+					gsl_multiroot_fdfsolver_iterate(nonlinear_solver);
+					condition = gsl_multiroot_test_residual(
+							gsl_multiroot_fdfsolver_f(nonlinear_solver), 1e-9);
+					count++;
+				} while(condition != GSL_SUCCESS);
+				FEM_module::ElementBoundary<double>::C_U_AMB *= 
+					(double)(step + 2)/(double)((step + 1));
+				FEM_module::ElementBoundary<double>::C_V_AMB *= 
+					(double)(step + 2)/(double)((step + 1));
+				FEM_module::ElementTriangular<double>::C_U_AMB *= 
+					(double)(step + 2)/(double)((step + 1));
+				FEM_module::ElementTriangular<double>::C_V_AMB *= 
+					(double)(step + 2)/(double)((step + 1));
+				generate_stiffness_matrix();
+				generate_f_vector();
+				FEM_module::write_vector_to_file(coefficients_, 
+						"../output/final_coeff");
+			}
 			
 			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
