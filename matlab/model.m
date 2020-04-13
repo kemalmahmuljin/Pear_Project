@@ -7,6 +7,7 @@ f = nonlinear_integrand(elements, coords, 0, 0.5, coefficients, VAR) + ...
     nonlinear_integrand(elements, coords, 0.5, 0.5, coefficients, VAR);
 
 f = f/6.0 + stiffness*coefficients + f_vector; 
+% f = stiffness*coefficients + f_vector; 
 
 % Jacobian
 
@@ -14,5 +15,7 @@ J = jacobian_integrand(elements, coords, 0, 0.5, coefficients, VAR) + ...
     jacobian_integrand(elements, coords, 0.5, 0, coefficients, VAR) + ...
     jacobian_integrand(elements, coords, 0.5, 0.5, coefficients, VAR);
 J = J/6.0 + stiffness;
+% J = stiffness;
+
 end
 

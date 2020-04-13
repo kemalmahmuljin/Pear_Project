@@ -43,12 +43,11 @@ dlmwrite('output/calculated_coeff',result_coeff,'delimiter',' ','precision',12,'
 
 %% function linearly increasing C in r
 %%{
-result_coeff = ones(2*size(coords,1),1)';
-
+result_coeff = ones(size(coords,1),1)';
+rmax = max(coords(:,1));
 for i=1:size(coords,1)
     r = coords(i,1);
-    result_coeff(i) = 150*r;
-    result_coeff(i + size(coords,1)) = 0.2*r;
+    result_coeff(i) = r/(2*rmax) + 0.5;
 end
 %dlmwrite('../output/calculated_coeff',4,'delimiter',' ','precision',12,'-append');
 dlmwrite('../output/calculated_coeff',result_coeff,'delimiter',' ','precision',12);
