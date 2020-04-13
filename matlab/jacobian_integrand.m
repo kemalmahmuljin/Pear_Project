@@ -27,7 +27,7 @@ function jacob = jacobian_integrand(elements, coords, epsilon, eta, coefficients
         
         % Necessary variables
 		r = r1 + (r2 - r1)*epsilon + (r3 - r1)*eta;
-		jac = (r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1);
+		jac = abs( (r2 - r1)*(z3 - z1) - (r3 - r1)*(z2 - z1) );
 
         % Basis functions in triangle
 		phi_1 = 1 - epsilon - eta;
@@ -52,57 +52,59 @@ function jacob = jacobian_integrand(elements, coords, epsilon, eta, coefficients
 		rvu =  RESP_Q*ruu - K_MFU*MAX_FERM_CO2/( (K_MFU + c_u)^2 );
 		rvv =  RESP_Q*ruv;
 
+        dt = 1;
+        dtt = 1;
         % Appending the values to the Jacobian
 		% u_u Quadrant
-		jacob(n1, n1) = jacob(n1, n1) + r*ruu*phi_1*phi_1*jac;
-		jacob(n1, n2) = jacob(n1, n2) + r*ruu*phi_1*phi_2*jac;
-		jacob(n1, n3) = jacob(n1, n3) + r*ruu*phi_1*phi_3*jac;
+		jacob(n1, n1) = jacob(n1, n1) + dt*r*ruu*phi_1*phi_1*jac;
+		jacob(n1, n2) = jacob(n1, n2) + dt*r*ruu*phi_1*phi_2*jac;
+		jacob(n1, n3) = jacob(n1, n3) + dt*r*ruu*phi_1*phi_3*jac;
 
-		jacob(n2, n1) = jacob(n2, n1) + r*ruu*phi_2*phi_1*jac;
-		jacob(n2, n2) = jacob(n2, n2) + r*ruu*phi_2*phi_2*jac;
-		jacob(n2, n3) = jacob(n2, n3) + r*ruu*phi_2*phi_3*jac;
+		jacob(n2, n1) = jacob(n2, n1) + dt*r*ruu*phi_2*phi_1*jac;
+		jacob(n2, n2) = jacob(n2, n2) + dt*r*ruu*phi_2*phi_2*jac;
+		jacob(n2, n3) = jacob(n2, n3) + dt*r*ruu*phi_2*phi_3*jac;
 
-		jacob(n3, n1) = jacob(n3, n1) + r*ruu*phi_3*phi_1*jac;
-		jacob(n3, n2) = jacob(n3, n2) + r*ruu*phi_3*phi_2*jac;
-		jacob(n3, n3) = jacob(n3, n3) + r*ruu*phi_3*phi_3*jac;
+		jacob(n3, n1) = jacob(n3, n1) + dt*r*ruu*phi_3*phi_1*jac;
+		jacob(n3, n2) = jacob(n3, n2) + dt*r*ruu*phi_3*phi_2*jac;
+		jacob(n3, n3) = jacob(n3, n3) + dt*r*ruu*phi_3*phi_3*jac;
 
 		% u_v Quadrant
-		jacob(n1, n1 + nodes) = jacob(n1, n1 + nodes) + r*ruv*phi_1*phi_1*jac;
-		jacob(n1, n2 + nodes) = jacob(n1, n2 + nodes) + r*ruv*phi_1*phi_2*jac;
-		jacob(n1, n3 + nodes) = jacob(n1, n3 + nodes) + r*ruv*phi_1*phi_3*jac;
+		jacob(n1, n1 + nodes) = jacob(n1, n1 + nodes) + dtt*r*ruv*phi_1*phi_1*jac;
+		jacob(n1, n2 + nodes) = jacob(n1, n2 + nodes) + dtt*r*ruv*phi_1*phi_2*jac;
+		jacob(n1, n3 + nodes) = jacob(n1, n3 + nodes) + dtt*r*ruv*phi_1*phi_3*jac;
 		
-		jacob(n2, n1 + nodes) = jacob(n2, n1 + nodes) + r*ruv*phi_2*phi_1*jac;
-		jacob(n2, n2 + nodes) = jacob(n2, n2 + nodes) + r*ruv*phi_2*phi_2*jac;
-		jacob(n2, n3 + nodes) = jacob(n2, n3 + nodes) + r*ruv*phi_2*phi_3*jac;
+		jacob(n2, n1 + nodes) = jacob(n2, n1 + nodes) + dtt*r*ruv*phi_2*phi_1*jac;
+		jacob(n2, n2 + nodes) = jacob(n2, n2 + nodes) + dtt*r*ruv*phi_2*phi_2*jac;
+		jacob(n2, n3 + nodes) = jacob(n2, n3 + nodes) + dtt*r*ruv*phi_2*phi_3*jac;
 	
-		jacob(n3, n1 + nodes) = jacob(n3, n1 + nodes) + r*ruv*phi_3*phi_1*jac;
-		jacob(n3, n2 + nodes) = jacob(n3, n2 + nodes) + r*ruv*phi_3*phi_2*jac;
-		jacob(n3, n3 + nodes) = jacob(n3, n3 + nodes) + r*ruv*phi_3*phi_3*jac;
+		jacob(n3, n1 + nodes) = jacob(n3, n1 + nodes) + dtt*r*ruv*phi_3*phi_1*jac;
+		jacob(n3, n2 + nodes) = jacob(n3, n2 + nodes) + dtt*r*ruv*phi_3*phi_2*jac;
+		jacob(n3, n3 + nodes) = jacob(n3, n3 + nodes) + dtt*r*ruv*phi_3*phi_3*jac;
 
 		% v_u Quadrant
-		jacob(n1 + nodes, n1) = jacob(n1 + nodes, n1) - r*rvu*phi_1*phi_1*jac;
-		jacob(n1 + nodes, n2) = jacob(n1 + nodes, n2) - r*rvu*phi_1*phi_2*jac;
-		jacob(n1 + nodes, n3) = jacob(n1 + nodes, n3) - r*rvu*phi_1*phi_3*jac;
+		jacob(n1 + nodes, n1) = jacob(n1 + nodes, n1) - dt*r*rvu*phi_1*phi_1*jac;
+		jacob(n1 + nodes, n2) = jacob(n1 + nodes, n2) - dt*r*rvu*phi_1*phi_2*jac;
+		jacob(n1 + nodes, n3) = jacob(n1 + nodes, n3) - dt*r*rvu*phi_1*phi_3*jac;
 
-		jacob(n2 + nodes, n1) = jacob(n2 + nodes, n1) - r*rvu*phi_2*phi_1*jac;
-		jacob(n2 + nodes, n2) = jacob(n2 + nodes, n2) - r*rvu*phi_2*phi_2*jac;
-		jacob(n2 + nodes, n3) = jacob(n2 + nodes, n3) - r*rvu*phi_2*phi_3*jac;
+		jacob(n2 + nodes, n1) = jacob(n2 + nodes, n1) - dt*r*rvu*phi_2*phi_1*jac;
+		jacob(n2 + nodes, n2) = jacob(n2 + nodes, n2) - dt*r*rvu*phi_2*phi_2*jac;
+		jacob(n2 + nodes, n3) = jacob(n2 + nodes, n3) - dt*r*rvu*phi_2*phi_3*jac;
 
-		jacob(n3 + nodes, n1) = jacob(n3 + nodes, n1) - r*rvu*phi_3*phi_1*jac;
-		jacob(n3 + nodes, n2) = jacob(n3 + nodes, n2) - r*rvu*phi_3*phi_2*jac;
-		jacob(n3 + nodes, n3) = jacob(n3 + nodes, n3) - r*rvu*phi_3*phi_3*jac;
+		jacob(n3 + nodes, n1) = jacob(n3 + nodes, n1) - dt*r*rvu*phi_3*phi_1*jac;
+		jacob(n3 + nodes, n2) = jacob(n3 + nodes, n2) - dt*r*rvu*phi_3*phi_2*jac;
+		jacob(n3 + nodes, n3) = jacob(n3 + nodes, n3) - dt*r*rvu*phi_3*phi_3*jac;
 
 		% v_v Quadrant
-		jacob(n1 + nodes, n1 + nodes) = jacob(n1 + nodes, n1 + nodes) - r*rvv*phi_1*phi_1*jac;
-		jacob(n1 + nodes, n2 + nodes) = jacob(n1 + nodes, n2 + nodes) - r*rvv*phi_1*phi_2*jac;
-		jacob(n1 + nodes, n3 + nodes) = jacob(n1 + nodes, n3 + nodes) - r*rvv*phi_1*phi_3*jac;
+		jacob(n1 + nodes, n1 + nodes) = jacob(n1 + nodes, n1 + nodes) - dtt*r*rvv*phi_1*phi_1*jac;
+		jacob(n1 + nodes, n2 + nodes) = jacob(n1 + nodes, n2 + nodes) - dtt*r*rvv*phi_1*phi_2*jac;
+		jacob(n1 + nodes, n3 + nodes) = jacob(n1 + nodes, n3 + nodes) - dtt*r*rvv*phi_1*phi_3*jac;
 		
-		jacob(n2 + nodes, n1 + nodes) = jacob(n2 + nodes, n1 + nodes) - r*rvv*phi_2*phi_1*jac;
-		jacob(n2 + nodes, n2 + nodes) = jacob(n2 + nodes, n2 + nodes) - r*rvv*phi_2*phi_2*jac;
-		jacob(n2 + nodes, n3 + nodes) = jacob(n2 + nodes, n3 + nodes) - r*rvv*phi_2*phi_3*jac;
+		jacob(n2 + nodes, n1 + nodes) = jacob(n2 + nodes, n1 + nodes) - dtt*r*rvv*phi_2*phi_1*jac;
+		jacob(n2 + nodes, n2 + nodes) = jacob(n2 + nodes, n2 + nodes) - dtt*r*rvv*phi_2*phi_2*jac;
+		jacob(n2 + nodes, n3 + nodes) = jacob(n2 + nodes, n3 + nodes) - dtt*r*rvv*phi_2*phi_3*jac;
 	
-		jacob(n3 + nodes, n1 + nodes) = jacob(n3 + nodes, n1 + nodes) - r*rvv*phi_3*phi_1*jac;
-		jacob(n3 + nodes, n2 + nodes) = jacob(n3 + nodes, n2 + nodes) - r*rvv*phi_3*phi_2*jac;
-		jacob(n3 + nodes, n3 + nodes) = jacob(n3 + nodes, n3 + nodes) - r*rvv*phi_3*phi_3*jac;	
+		jacob(n3 + nodes, n1 + nodes) = jacob(n3 + nodes, n1 + nodes) - dtt*r*rvv*phi_3*phi_1*jac;
+		jacob(n3 + nodes, n2 + nodes) = jacob(n3 + nodes, n2 + nodes) - dtt*r*rvv*phi_3*phi_2*jac;
+		jacob(n3 + nodes, n3 + nodes) = jacob(n3 + nodes, n3 + nodes) - dtt*r*rvv*phi_3*phi_3*jac;	
 	end
 end

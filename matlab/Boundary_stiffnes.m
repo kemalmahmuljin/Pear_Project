@@ -7,7 +7,7 @@ function [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R)
      matrixb2 = zeros(n,n);
 
      for i = 1:1:size(boundaries,1)
-         if boundaries(i,3) == 0 
+         if boundaries(i,3) == 0 % so if \elem \Gamma_2
             n1 = boundaries(i,1)+1;
             n2 = boundaries(i,2)+1;
             %r1,r2
@@ -37,8 +37,4 @@ function [matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R)
             matrixb2(n2,n2) = matrixb2(n2,n2)+s22bv;
          end 
      end
-    % figure;
-    % spy(matrix_store);
-    % figure;
-    % spy(matrix1 - matrix_store)
 end

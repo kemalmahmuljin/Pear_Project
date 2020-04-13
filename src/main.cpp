@@ -6,6 +6,10 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+
+
+#include <chrono>
+#include <thread>
 #endif
 
 #ifndef ELEMENT_HPP
@@ -24,10 +28,10 @@
 #endif
 
 double TEMP = 25 + 273.15;
-int NUM_NODES_G = 529;
+int NUM_NODES_G = 142;
 double CON_O2 = 20.8/100.0;
 double CON_CO2 = 0.4/100.0;
-std::string FILEPATH = "../Input/new_pear_2.msh";
+std::string FILEPATH = "..\\Input\\pear_3.msh";
 
 // Element values configuation
 template <typename P>
@@ -94,6 +98,7 @@ typename FEM_module::Element<P>::node_t
 	FEM_module::ElementBoundary<P>::NUM_NODES = NUM_NODES_G;
 
 int test2(){
+
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	const std::vector<std::vector<double>> coords = 
@@ -373,6 +378,23 @@ int test_jacobian(){
 }
 
 int main(){
-	test_concentration_model_2();
+	//std::cout<<"it does compile"<<std::endl;
+	//test_jacobian();
+/*
+	std::string line;
+	std::ifstream file_stream;
+	file_stream.open(FILEPATH);
+	std::getline(file_stream, line);
+	// Starts rocessing nodes, gets the number of nodes.
+	int c = 1;
+	while (line.find("$Nodes") == std::string::npos){
+		//std::cout<<"gets stuck here"<<std::endl;
+		std::cout<<line<<std::endl;
+		std::getline(file_stream, line);
+		c += 1;
+	}
+	std::cout<<"print shit ========================================================================="<<std::endl;
+	*/
+	test2();
 	return EXIT_SUCCESS;
 }

@@ -71,9 +71,6 @@ if __name__ == "__main__":
     f2_stream = StringIO(f2_str)
     f2_vector = np.loadtxt(f2_stream)
     
-    cc_vector = np.loadtxt("../output/calculated_coeff")
-    
-    fc_vector = np.loadtxt("../output/f_calc")
 
     MC_file = open("../output/MC_lin", 'r')
     MC_str = MC_file.read()

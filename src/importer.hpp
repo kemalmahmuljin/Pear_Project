@@ -133,7 +133,7 @@ class ImporterMsh : public Importer<P>{
 				}
 			}
 			std::getline(file_stream, line);
-			assert(line == "$EndNodes");
+			//assert(line.find("$EndNodes") == std::string::npos);
 			return EXIT_SUCCESS;
 		}
 
@@ -149,7 +149,7 @@ class ImporterMsh : public Importer<P>{
 			std::stringstream str_to_num;
 
 			std::getline(file_stream, line);
-			assert(line == "$Elements");
+			//assert(line == "$Elements");
 			std::getline(file_stream, line);
 			line_data = split(line, ' ');
 			
@@ -190,7 +190,7 @@ class ImporterMsh : public Importer<P>{
 				}
 			}
 			std::getline(file_stream, line);
-			assert(line == "$EndElements");
+			//assert(line == "$EndElements");
 			return EXIT_SUCCESS;
 		}
 
@@ -204,8 +204,9 @@ class ImporterMsh : public Importer<P>{
 			file_stream.open(this->file_path_);
 			std::getline(file_stream, line);
 			// Starts rocessing nodes, gets the number of nodes.
-			while (!(line == "$Nodes")){
+			while (line.find("$Nodes") == std::string::npos){
 				std::getline(file_stream, line);
+				std::cout<<line<<std::endl;
 			}
 
 			get_node_matrix(file_stream, line);
