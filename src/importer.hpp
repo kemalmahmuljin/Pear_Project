@@ -203,10 +203,10 @@ class ImporterMsh : public Importer<P>{
 			
 			file_stream.open(this->file_path_);
 			std::getline(file_stream, line);
-			// Starts rocessing nodes, gets the number of nodes.
+			// Starts processing nodes, gets the number of nodes.
 			while (line.find("$Nodes") == std::string::npos){
 				std::getline(file_stream, line);
-				std::cout<<line<<std::endl;
+				//std::cout<<line<<std::endl;
 			}
 
 			get_node_matrix(file_stream, line);
