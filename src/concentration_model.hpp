@@ -109,6 +109,10 @@ class ConcentrationModel{
 			return coefficients_;
 		}
 
+		const std::vector<std::vector<precision_t>>& coords(){
+			return coordinates_;
+		}
+
 		gsl_vector* helper(){
 			return helper_;
 		}
@@ -192,6 +196,13 @@ class ConcentrationModel{
 			return EXIT_SUCCESS;
 		}
 
+		int add_analytical_resp(precision_t cu_2, precision_t cv_2){
+			for (auto elem : elements_){
+				elem.integrate_analytical_resp(coordinates_, f_vector_, cu_2, 
+						cv_2);
+			}
+		}
+
 		node_t get_element_from_boundarie(const std::vector<node_t>& nodes){
 			node_t count = 0;
 			for (auto elem : elements_){
@@ -263,7 +274,7 @@ class ConcentrationModel{
 						2*number_nodes_, 0);
 			size_t iter = 0;
 			int status;
-
+			gsl_vector_scale(f_vector_, -1.0);
 			gsl_vector_set_zero(coefficients_);
 			
 			stiff_mat_cc = gsl_spmatrix_ccs(stiffness_matrix_);
@@ -277,11 +288,13 @@ class ConcentrationModel{
 
 			gsl_splinalg_itersolve_free(work);
 			gsl_spmatrix_free(stiff_mat_cc);
+			gsl_vector_scale(f_vector_, -1.0);
 			return EXIT_SUCCESS;
 		}
 
 		int solve_linear_model_LU(){
 			int status;
+			gsl_vector_scale(f_vector_, -1.0);
 			gsl_matrix* dense_stiff = gsl_matrix_alloc(
 					(size_t)(2*number_nodes_), (size_t)(2*number_nodes_));
 			gsl_spmatrix_sp2d(dense_stiff, stiffness_matrix_);
@@ -291,6 +304,7 @@ class ConcentrationModel{
 			
 			gsl_permutation_free(permut);
 			gsl_matrix_free(dense_stiff);
+			gsl_vector_scale(f_vector_, -1.0);
 			return EXIT_SUCCESS;
 		}
 
@@ -299,16 +313,13 @@ class ConcentrationModel{
 			generate_stiffness_matrix();
 			generate_f_vector();
 			add_constants_to_f(const_1, const_2);
-			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model();
 			//gsl_vector_scale(coefficients_, 0.17);
-			gsl_vector_scale(f_vector_, -1.0);
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, 
 					"../output/f_vector_lin");
-			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff_lin");
@@ -325,15 +336,12 @@ class ConcentrationModel{
 		}
 
 		int generate_initial_codition(){
-			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model();
-			gsl_vector_scale(f_vector_, -1.0);
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, 
 					"../output/f_vector_lin");
-			gsl_vector_scale(f_vector_, -1.0);
 			add_linear_approx_to_stiffness();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff_lin");

@@ -28,10 +28,10 @@
 #endif
 
 double TEMP = 25 + 273.15;
-int NUM_NODES_G = 142;
+int NUM_NODES_G = 529;
 double CON_O2 = 20.8/100.0;
 double CON_CO2 = 0.4/100.0;
-std::string FILEPATH = "../Input/pear_3.msh";
+std::string FILEPATH = "../Input/new_pear_2.msh";
 
 // Element values configuation
 template <typename P>
@@ -316,6 +316,147 @@ int test_concentration_model_3(){
 	return EXIT_SUCCESS;
 }
 
+int test_linear_solver_analytical(){
+	std::ofstream myfile;
+	myfile.open("mesh_convergence", std::ios::out);
+	FEM_module::ElementTriangular<double>::SIGMA_UZ = 
+		FEM_module::ElementTriangular<double>::SIGMA_UR;
+	FEM_module::ElementTriangular<double>::SIGMA_VZ = 
+		FEM_module::ElementTriangular<double>::SIGMA_VR;
+	std::vector<size_t> nodes_v = {13, 21, 64, 146, 367, 802, 4729};
+	std::vector<double> interior_point{0.01, 0.06};
+	double rel_err_u = 0;
+	double rel_err_v = 0;
+	double norm_u = 0;
+	double norm_v = 0;
+	double radius = 0.06;
+	double c0_u = 2.0;
+	double c2_u = (c0_u - FEM_module::ElementTriangular<double>::C_U_AMB)/
+		(2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
+		 FEM_module::ElementBoundary<double>::RHO_U - pow(radius, 2));
+	double c0_v = 1.0;
+	double c2_v = (c0_v - FEM_module::ElementTriangular<double>::C_V_AMB)/
+		(2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
+		 FEM_module::ElementBoundary<double>::RHO_V - pow(radius, 2));
+	std::string filename;
+	double r, z, val_u, val_v;
+	int count = 1;
+	gsl_vector* coeff_diff;
+	for (size_t node : nodes_v){
+		filename = "../Input/circle_" + std::to_string(count) + ".msh";
+		NUM_NODES_G = node;
+		FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ImporterMsh<double> mesh_importer(filename);
+		mesh_importer.process_file();
+		FEM_module::ConcentrationModel<double> model(mesh_importer, 
+				interior_point);
+		if (count == 7){
+			coeff_diff = gsl_vector_alloc(2*model.number_nodes());
+		}
+		model.generate_f_vector();
+		model.generate_stiffness_matrix();
+		model.add_analytical_resp(c2_u, c2_v);
+		model.solve_linear_model_LU();
+		rel_err_u = 0;
+		rel_err_v = 0;
+		norm_u = 0;
+		norm_v = 0;
+		for (size_t idx = 0; idx < NUM_NODES_G; idx++){
+			r = model.coords()[idx][0];
+			z = model.coords()[idx][1];
+			val_u = c0_u + c2_u*(pow(r, 2) + pow(z - 0.07, 2));
+			val_v = c0_v + c2_v*(pow(r, 2) + pow(z - 0.07, 2));
+			if (count == 7){
+				gsl_vector_set(coeff_diff, idx, gsl_vector_get(
+							model.coefficients(), idx) - val_u);
+				gsl_vector_set(coeff_diff, idx + NUM_NODES_G, gsl_vector_get(
+							model.coefficients(), idx + NUM_NODES_G) - val_v);
+			}
+			rel_err_u += pow(gsl_vector_get(model.coefficients(), idx) - val_u, 2);
+			rel_err_v += pow(gsl_vector_get(model.coefficients(), idx + NUM_NODES_G) - val_v, 2);
+			norm_u +=  pow(val_u, 2);
+			norm_v +=  pow(val_v, 2);
+		}
+		myfile<<NUM_NODES_G<<" "<<rel_err_u/norm_u<<" "<<rel_err_v/norm_v<<std::endl;
+		if (count == 7){
+			model.write_elements_to_file("../output/elements");
+			model.write_boundaries_to_file("../output/boundaries");
+			model.write_coordinates_to_file("../output/coords");
+			FEM_module::write_vector_to_file(coeff_diff, "../output/initial_coeff");
+			gsl_vector_free(coeff_diff);
+		}
+		count += 1;
+	}
+	myfile.close();	
+	return EXIT_SUCCESS;
+	
+}
+
+int test_linear_solver(){
+	NUM_NODES_G = 779;
+	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+	FEM_module::ElementTriangular<double>::SIGMA_UZ = 
+		FEM_module::ElementTriangular<double>::SIGMA_UR;
+	FEM_module::ElementTriangular<double>::SIGMA_VZ = 
+		FEM_module::ElementTriangular<double>::SIGMA_VR;
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double> mesh_importer("../Input/circle.msh");
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.generate_f_vector();
+	model.generate_stiffness_matrix();
+	double radius = 0.06;
+	double r;
+	double z;
+	double val_u = 0;
+	double val_v = 0;
+	double c0_u = 2.0;
+	double c2_u = (c0_u - FEM_module::ElementTriangular<double>::C_U_AMB)/
+		(2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
+		 FEM_module::ElementBoundary<double>::RHO_U - pow(radius, 2));
+	double c0_v = 1.0;
+	double c2_v = (c0_v - FEM_module::ElementTriangular<double>::C_V_AMB)/
+		(2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
+		 FEM_module::ElementBoundary<double>::RHO_V - pow(radius, 2));
+	gsl_vector* wanted_coeff;
+	wanted_coeff = gsl_vector_alloc(2*model.number_nodes());
+	gsl_vector* wanted_f;
+	wanted_f = gsl_vector_calloc(2*model.number_nodes());
+	for (size_t idx = 0; idx < model.number_nodes(); idx++){
+		r = model.coords()[idx][0];
+		z = model.coords()[idx][1];
+		val_u = c0_u + c2_u*(pow(r, 2) + pow(z - 0.07, 2));
+		val_v = c0_v + c2_v*(pow(r, 2) + pow(z - 0.07, 2));
+		gsl_vector_set(wanted_coeff, idx, val_u);
+		gsl_vector_set(wanted_coeff, idx + model.number_nodes(), val_v);
+	}
+	gsl_spblas_dgemv(CblasNoTrans, 1.0, model.stiffness_matrix(), 
+			wanted_coeff, 0.0, wanted_f);
+	gsl_vector_add(wanted_f, model.f_vector());
+	gsl_vector_scale(wanted_f, -1.0);;
+	FEM_module::write_vector_to_file(wanted_f, 
+					"../output/f_vector");
+	gsl_vector_add(wanted_f, model.f_vector());
+	gsl_vector_scale(wanted_f, -1.0);
+	model.set_f_vector(wanted_f);
+	model.solve_linear_model();
+	FEM_module::write_vector_to_file(model.coefficients(), 
+					"../output/initial_coeff");
+	std::cout<<"C0 u: "<<c0_u<<" C0 v: "<<c0_v<<std::endl;
+	std::cout<<"C2 u: "<<c2_u<<" C2 v: "<<c2_v<<std::endl;
+	std::cout<<"C_r u: "<<c0_u + c2_u*radius*radius<<std::endl;
+	std::cout<<"C_r v: "<<c0_v + c2_v*radius*radius<<std::endl;
+	std::cout<<"C_V_AMB: "<<FEM_module::ElementTriangular<double>::C_V_AMB<<std::endl;
+	return EXIT_SUCCESS;
+	
+}
+
 int test_no_o2(){
 	FEM_module::ElementBoundary<double>::C_U_AMB = 0.0;
 	FEM_module::ElementTriangular<double>::C_U_AMB = 0.0;
@@ -390,23 +531,6 @@ int test_jacobian(){
 }
 
 int main(){
-	//std::cout<<"it does compile"<<std::endl;
-	//test_jacobian();
-/*
-	std::string line;
-	std::ifstream file_stream;
-	file_stream.open(FILEPATH);
-	std::getline(file_stream, line);
-	// Starts rocessing nodes, gets the number of nodes.
-	int c = 1;
-	while (line.find("$Nodes") == std::string::npos){
-		//std::cout<<"gets stuck here"<<std::endl;
-		std::cout<<line<<std::endl;
-		std::getline(file_stream, line);
-		c += 1;
-	}
-	std::cout<<"print shit ========================================================================="<<std::endl;
-	*/
-	test2();
+	test_linear_solver_analytical();
 	return EXIT_SUCCESS;
 }

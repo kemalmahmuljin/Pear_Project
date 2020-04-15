@@ -356,6 +356,40 @@ class ElementTriangular : public Element<P>{
 				return EXIT_FAILURE;
 			}
 		}
+		
+		precision_t integrand_analytical_u(precision_t u, precision_t v, 
+				const std::vector<std::vector<precision_t>>& coordinates,
+				node_t node_idx, precision_t cu_2){
+			/*
+			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z) for the domain 
+			 * omega transformed to a triangular domain with nodes at [0,1],
+			 * [0,0] and [0,1], Where R_u is computed using the analitical
+			 * solution proposed.
+  			*/
+			assert((node_idx > 0) && (node_idx < 4));
+			precision_t r1 = coordinates[this->nodes_[0]][0];
+			precision_t r2 = coordinates[this->nodes_[1]][0];
+			precision_t r3 = coordinates[this->nodes_[2]][0];
+			return 6.0*cu_2*(r1 + (r2 - r1)*u + (r3 - r1)*v)*SIGMA_UR*
+				jacobian(coordinates)*phi(u, v, node_idx);
+		}
+		
+		precision_t integrand_analytical_v(precision_t u, precision_t v, 
+				const std::vector<std::vector<precision_t>>& coordinates,
+				node_t node_idx, precision_t cv_2){
+			/*
+			 * returns the integrand r*R_v(C_u,C_v)*phi_j(r,z) for the domain 
+			 * omega transformed to a triangular domain with nodes at [0,1],
+			 * [0,0] and [0,1], Where R_v is computed using the analitical
+			 * solution proposed.
+  			*/
+			assert((node_idx > 0) && (node_idx < 4));
+			precision_t r1 = coordinates[this->nodes_[0]][0];
+			precision_t r2 = coordinates[this->nodes_[1]][0];
+			precision_t r3 = coordinates[this->nodes_[2]][0];
+			return -6.0*cv_2*(r1 + (r2 - r1)*u + (r3 - r1)*v)*SIGMA_VR*
+				jacobian(coordinates)*phi(u, v, node_idx);
+		}
 
 		precision_t diff_integrand_u(precision_t epsilon, precision_t eta, 
 				const gsl_vector* coefficients,
@@ -469,6 +503,39 @@ class ElementTriangular : public Element<P>{
 						(size_t)(this->nodes_[node_idx] + NUM_NODES), 
 						gsl_vector_get(result_vector, 
 							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
+						result_v);
+				phi_idx++;
+			}
+			return EXIT_SUCCESS;
+		}
+
+		int integrate_analytical_resp(
+				const std::vector<std::vector<precision_t>>& coordinates,
+				gsl_vector* result_vector, precision_t cu_2, precision_t cv_2){
+			precision_t result_u;
+			precision_t result_v;
+			int phi_idx = 1;
+			for (int node_idx = 0; node_idx < 3; node_idx++){
+				result_u = (
+					integrand_analytical_u(0.5, 0, coordinates, phi_idx, cu_2) +
+					integrand_analytical_u(0, 0.5, coordinates, phi_idx, cu_2) +
+					integrand_analytical_u(0.5, 0.5, coordinates, phi_idx, cu_2)
+					)/6;
+
+				result_v = (
+					integrand_analytical_v(0.5, 0, coordinates, phi_idx, cv_2) +
+					integrand_analytical_v(0, 0.5, coordinates, phi_idx, cv_2) +
+					integrand_analytical_v(0.5, 0.5, coordinates, phi_idx, cv_2)
+					)/6;
+
+				gsl_vector_set(result_vector, 
+						(size_t)(this->nodes_[node_idx]), 
+						gsl_vector_get(result_vector, 
+							(size_t)(this->nodes_[node_idx])) + result_u);
+				gsl_vector_set(result_vector, 
+						(size_t)(this->nodes_[node_idx] + NUM_NODES), 
+						gsl_vector_get(result_vector, 
+							(size_t)(this->nodes_[node_idx] + NUM_NODES)) + 
 						result_v);
 				phi_idx++;
 			}
