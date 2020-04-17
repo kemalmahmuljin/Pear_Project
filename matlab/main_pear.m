@@ -141,33 +141,30 @@ C_start = matrix_amb\f_vector; % should be Camb
 % dlmwrite('../output/MC_lin',C_start','delimiter',' ','precision',12,'-append');
 
 % Calculating contribution of nonlinear term around ambient concentrations
-Jacobian = jacobian_integrandE(elements, coords, 0.5, 0  , C_start/2, VAR) ...
-         + jacobian_integrandE(elements, coords, 0  , 0.5, C_start/2, VAR) ...
-         + jacobian_integrandE(elements, coords, 0.5, 0.5, C_start/2, VAR);
-Jacobian = Jacobian/6;    
-F =        Linearized_f_integrandE(elements, coords, 0.5, 0  , C_start/2, VAR) ...
-         + Linearized_f_integrandE(elements, coords, 0  , 0.5, C_start/2, VAR) ...
-         + Linearized_f_integrandE(elements, coords, 0.5, 0.5, C_start/2, VAR);
-F = F/6;
-
+Jacobian = jacobian_integrandE(elements, coords, V_MU, K_MU, RESP_Q); 
+% F =        Linearized_f_integrandE(elements, coords, 0.5, 0  , C_start, VAR) ...
+%          + Linearized_f_integrandE(elements, coords, 0  , 0.5, C_start, VAR) ...
+%          + Linearized_f_integrandE(elements, coords, 0.5, 0.5, C_start, VAR);
+% F = F/6;
+spy(Jacobian)
+Add  = Jacobian*C_start;
 % Creating new linear system that contains linearization
-mat_lin = matrix_amb + Jacobian;
+mat_lin = matrix_amb;
 % F(1:size(coords,1)) = - 0.5*F(1:size(coords,1));
-F_lin =  f_vector - F;
-C_lin = mat_lin\F_lin;
+C_lin = mat_lin\(f_vector + Add);
 % writing results to file
 delete('../output/MC_lin');
 dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
-dlmwrite('../output/MC_lin',(F-f_vector)','delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
+% dlmwrite('../output/MC_lin',(F-f_vector)','delimiter',' ','precision',12,'-append');
 % dlmwrite('../output/MC_lin',(Jacobian*C_lin)','delimiter',' ','precision',12,'-append');
 
 % Executing the nonlinear solver with the calculated starting coefficient
 options = optimoptions(@fsolve,'Display','iter',...
     'Algorithm','trust-region',...
     'SpecifyObjectiveGradient',true,'PrecondBandWidth',0 , ...
-    'FunctionTolerance', 1e-25, 'OptimalityTolerance', 4e-21);%, ...
-    %'PlotFcn', 'optimplotstepsize');
+    'FunctionTolerance', 1e-25, 'OptimalityTolerance', 4e-19)%, ...
+    %'PlotFcn', 'optimplotresnorm');
 model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
 	matrix_amb, -f_vector)
 
