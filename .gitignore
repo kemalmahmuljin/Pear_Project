@@ -1,3 +1,5 @@
 
 matlab/Generate_stiffnes.m
 .vscode/c_cpp_properties.json
+src/.vscode/settings.json
+src/.bash_profile

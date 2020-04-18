@@ -1,25 +1,22 @@
 clear all; close all
 %% Importing needed matrices
+%% These are configs for GMSH
+%{
 boundaries = dlmread('../output/boundaries', ' ', 1, 0);
 boundaries = boundaries(:, 1:3);
 elements = dlmread('../output/elements', ' ', 1, 0);
 elements = elements(:, 1:3);
 coords = dlmread('../output/coords', ' ', 1, 0);
 coords = coords(:, 1:2);
+%}
+%% These are configs for Matlab Mesh
 %{
-% boundaries = dlmread('../output/boundaries_fine', ' ', 1, 0);
-% boundaries = boundaries(:, 1:3);
-% elements = dlmread('../output/elements_fine', ' ', 1, 0);
-% elements = elements(:, 1:3);
-% coords = dlmread('../output/coords_fine', ' ', 1, 0);
-% coords = coords(:, 1:2);
-
-% boundaries = dlmread('../output/boundaries_3', ' ', 1, 0);
-% boundaries = boundaries(:, 1:3);
-% elements = dlmread('../output/elements_3', ' ', 1, 0);
-% elements = elements(:, 1:3);
-% coords = dlmread('../output/coords_3', ' ', 1, 0);
-% coords = coords(:, 1:2);
+boundaries = dlmread('../output/M_boundaries');
+boundaries = boundaries(:, 1:3);
+elements = dlmread('../output/M_elements');
+elements = elements(:, 1:3);
+coords = dlmread('../output/M_coords');
+coords = coords(:, 1:2);
 %}
 %% Declaring some constants
 % Tuneable parameters
@@ -61,6 +58,62 @@ VAR(4) = K_MFU;
 VAR(5) = MAX_FERM_CO2;
 VAR(6) = RESP_Q;
 
+
+%% Start of program
+
+[matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
+[matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
+[f1, f2] = Boundary_vector(boundaries, coords, C, R);
+f_vector = - [f1;f2];
+matrix_amb = [( matrix1 + matrixb1 ), zeros( size(coords,1) ); zeros( size(coords,1) ),( matrix2 + matrixb2 )];
+C_start = matrix_amb\f_vector; % should be Camb
+% writing results to file
+delete('../output/MC_lin');
+dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_start','delimiter',' ','precision',12,'-append');
+
+% Calculating contribution of nonlinear term around ambient concentrations
+% Jacobian = jacobian_integrandE(elements, coords, V_MU, K_MU, RESP_Q); 
+Jacobian = jacobian_integrand(elements, coords, 0.5, 0  , C_start, VAR) ...
+         + jacobian_integrand(elements, coords, 0  , 0.5, C_start, VAR) ...
+         + jacobian_integrand(elements, coords, 0.5, 0.5, C_start, VAR);
+Jacobian = Jacobian/6;
+F =        Linearized_f_integrand(elements, coords, 0.5, 0  , C_start, VAR) ...
+         + Linearized_f_integrand(elements, coords, 0  , 0.5, C_start, VAR) ...
+         + Linearized_f_integrand(elements, coords, 0.5, 0.5, C_start, VAR);
+F = F/6;
+
+% Creating new linear system that contains linearization
+mat_lin =  matrix_amb + Jacobian;
+% F(1:size(coords,1)) = - 0.5*F(1:size(coords,1));
+C_lin = mat_lin\(f_vector - F);
+% writing results to file
+delete('../output/MC_lin');
+dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
+% dlmwrite('../output/MC_lin',(F-f_vector)','delimiter',' ','precision',12,'-append');
+% dlmwrite('../output/MC_lin',(Jacobian*C_lin)','delimiter',' ','precision',12,'-append');
+
+% Executing the nonlinear solver with the calculated starting coefficient
+options = optimoptions(@fsolve,'Display','iter',...
+    'Algorithm','trust-region',...
+    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0 , ...
+    'FunctionTolerance', 1e-30, 'OptimalityTolerance', 4e-22)%, ...
+    %'PlotFcn', 'optimplotresnorm');
+model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
+	matrix_amb, -f_vector)
+
+[x,fval,exitflag,output] = fsolve(model_func,C_lin,options);
+
+% writing results to file
+delete('../output/MC_lin');
+dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/MC_lin',x','delimiter',' ','precision',12,'-append');
+
+
+
+
+% All main tests are in C++ 
 %% Test cases to check boundary
 %{
 % TEST coeff
@@ -128,50 +181,3 @@ F_diffusion = matb*x0';
 % dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
 % dlmwrite('../output/MC_lin',F_diffusion','delimiter',' ','precision',12,'-append');
 %}
-%% Start of program
-
-[matrix1, matrix2] = Generate_stiffnes(elements, coords, S);
-[matrixb1, matrixb2] = Boundary_stiffnes(boundaries, coords, R);
-[f1, f2] = Boundary_vector(boundaries, coords, C, R);
-f_vector = - [f1;f2];
-matrix_amb = [( matrix1 + matrixb1 ), zeros( size(coords,1) ); zeros( size(coords,1) ),( matrix2 + matrixb2 )];
-C_start = matrix_amb\f_vector; % should be Camb
-% writing results to file
-% dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',C_start','delimiter',' ','precision',12,'-append');
-
-% Calculating contribution of nonlinear term around ambient concentrations
-Jacobian = jacobian_integrandE(elements, coords, V_MU, K_MU, RESP_Q); 
-% F =        Linearized_f_integrandE(elements, coords, 0.5, 0  , C_start, VAR) ...
-%          + Linearized_f_integrandE(elements, coords, 0  , 0.5, C_start, VAR) ...
-%          + Linearized_f_integrandE(elements, coords, 0.5, 0.5, C_start, VAR);
-% F = F/6;
-spy(Jacobian)
-Add  = Jacobian*C_start;
-% Creating new linear system that contains linearization
-mat_lin = matrix_amb;
-% F(1:size(coords,1)) = - 0.5*F(1:size(coords,1));
-C_lin = mat_lin\(f_vector + Add);
-% writing results to file
-delete('../output/MC_lin');
-dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-dlmwrite('../output/MC_lin',C_lin','delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',(F-f_vector)','delimiter',' ','precision',12,'-append');
-% dlmwrite('../output/MC_lin',(Jacobian*C_lin)','delimiter',' ','precision',12,'-append');
-
-% Executing the nonlinear solver with the calculated starting coefficient
-options = optimoptions(@fsolve,'Display','iter',...
-    'Algorithm','trust-region',...
-    'SpecifyObjectiveGradient',true,'PrecondBandWidth',0 , ...
-    'FunctionTolerance', 1e-25, 'OptimalityTolerance', 4e-19)%, ...
-    %'PlotFcn', 'optimplotresnorm');
-model_func = @(coefficients) model(elements, coords, coefficients, VAR, ...
-	matrix_amb, -f_vector)
-
-[x,fval,exitflag,output] = fsolve(model_func,C_lin,options);
-
-% writing results to file
-delete('../output/MC_lin');
-dlmwrite('../output/MC_lin',4,'delimiter',' ','precision',12,'-append');
-dlmwrite('../output/MC_lin',x','delimiter',' ','precision',12,'-append');
-
