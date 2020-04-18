@@ -27,10 +27,65 @@ for i= 1:(size(B,1) - 1)
    end
 end
 
+
+%% Create matrix once
+n = model.Mesh.Elements;
+s = model.Mesh.Nodes;
+
+K = zeros(size(s,2), size(s,2));
+for e=1:size(n,2)
+    r1 = n(1,e);
+    r2 = n(2,e);
+    r3 = n(3,e);
+    K(r1,r1) = 1;
+    K(r1,r2) = 1;
+    K(r1,r3) = 1;
+    K(r2,r1) = 1;
+    K(r2,r2) = 1;
+    K(r2,r3) = 1;
+    K(r3,r1) = 1;
+    K(r3,r2) = 1;
+    K(r3,r3) = 1;
+end
+spy(K)
+tK = symrcm(K);
+Kn = K(tK,tK);
+spy(Kn);
+
+
+%% All nodes need to be reordered
+tempB = zeros(size(boundariess,1), size(boundariess,2));
+for i=1:size(boundariess,1)
+    r1 = boundariess(i,1);
+    r2 = boundariess(i,2);
+    tempB(i,1) = find(tK == r1);
+    tempB(i,2) = find(tK == r2);
+end
+boundariess(:,1) = tempB(:,1);
+boundariess(:,2) = tempB(:,2);
+
+
+Nodes = zeros(size(s,1),size(s,2));
+for i=1:size(tK,2)
+    check = tK(i);
+    % reorder coordinates
+    Nodes(:,check) = s(:,i);
+end
+
+% reordering elements
+tempE = zeros(size(n,1),size(n,2));
+for i=1:size(n,2)
+   r1 = n(1,i);
+   r2 = n(2,i);
+   r3 = n(3,i);
+   tempE(1,i) = find(tK == r1);
+   tempE(2,i) = find(tK == r2);
+   tempE(3,i) = find(tK == r3);
+end
 %% Write text files in output folder
 delete('../output/M_boundaries');
 dlmwrite('../output/M_boundaries',boundariess -1,'delimiter',' ','precision',12,'-append');
 delete('../output/M_coords');
-dlmwrite('../output/M_coords',model.Mesh.Nodes'/1000,'delimiter',' ','precision',12,'-append');
+dlmwrite('../output/M_coords',Nodes'/1000,'delimiter',' ','precision',12,'-append');
 delete('../output/M_elements');
-dlmwrite('../output/M_elements',( model.Mesh.Elements - 1)','delimiter',' ','precision',12,'-append');
+dlmwrite('../output/M_elements',( tempE - 1)','delimiter',' ','precision',12,'-append');
