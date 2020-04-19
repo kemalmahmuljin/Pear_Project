@@ -216,6 +216,125 @@ class ImporterMsh : public Importer<P>{
 		}
 };
 
+template <typename P>
+class ImporterText : public Importer<P>{
+	public:
+		using typename Importer<P>::precision_t;
+		using typename Importer<P>::mesh_size_t;
+		using typename Importer<P>::coord_vector_t;
+		using typename Importer<P>::element_vector_t;
+	public:
+		ImporterText()
+		: Importer<P>()
+		{}
+		ImporterText(std::string file_path)
+		: Importer<P>(file_path)
+		{}
+
+		const coord_vector_t& node_matrix(){
+			return this->node_matrix_;
+		}
+		const element_vector_t& element_matrix(){
+			return this->element_matrix_;
+		}
+		const element_vector_t& boundary_matrix(){
+			return this->boundary_matrix_;
+		}
+
+		int get_node_matrix(std::ifstream& coords_stream, std::string& line){
+
+			precision_t help_val;
+			std::vector<std::string> line_data;
+			std::stringstream str_to_num;
+			std::vector<precision_t> point_data;
+
+			while(coords_stream.peek() != EOF){
+				std::getline(coords_stream, line);
+				line_data = split(line, ' ');
+				for (int i = 0; i < 2; i++){
+					str_to_num << line_data[i];
+					str_to_num >> help_val;
+					str_to_num.clear();
+					point_data.push_back(help_val/1000.0);
+				}
+				this->node_matrix_.push_back(point_data);
+				point_data.clear();	
+			}		
+			return EXIT_SUCCESS;
+		}
+
+		int get_elements(std::ifstream& elements_stream, std::string& line){
+			mesh_size_t help_integer = 1;
+			std::vector<std::string> line_data;
+			std::stringstream str_to_num;
+			std::vector<mesh_size_t> point_data;
+
+			while(elements_stream.peek() != EOF){
+				std::getline(elements_stream, line);
+				line_data = split(line, ' ');
+				for (int i = 0; i < 3; i++){
+					str_to_num << line_data[i];
+					str_to_num >> help_integer;
+					str_to_num.clear();
+					point_data.push_back(help_integer);
+				}
+				this->element_matrix_.push_back(point_data);
+				point_data.clear();	
+			}
+			return EXIT_SUCCESS;
+		}
+
+		int get_boundaries(std::ifstream& boundaries_stream, std::string& line){
+			mesh_size_t help_integer = 1;
+			std::vector<std::string> line_data;
+			std::stringstream str_to_num;
+			std::vector<mesh_size_t> point_data;
+
+			while(boundaries_stream.peek() != EOF){
+				std::getline(boundaries_stream, line);
+				line_data = split(line, ' ');
+				for (int i = 0; i < 2; i++){
+					str_to_num << line_data[i];
+					str_to_num >> help_integer;
+					str_to_num.clear();
+					point_data.push_back(help_integer);
+				}
+				this->boundary_matrix_.push_back(point_data);
+				point_data.clear();	
+			}
+			return EXIT_SUCCESS;
+		}
+
+		int process_file(){
+			/* Function used to extract node, boundary, and elements data from a
+			 * file
+			*/
+			std::string line;
+			std::ifstream file_stream;
+			std::ifstream coords_stream;
+			std::ifstream elements_stream;
+			std::ifstream boundaries_stream;
+			
+			file_stream.open(this->file_path_);
+			
+			std::getline(file_stream, line);
+			coords_stream.open(line);
+
+			std::getline(file_stream, line);
+			elements_stream.open(line);
+
+			std::getline(file_stream, line);
+			boundaries_stream.open(line);
+
+			get_node_matrix(coords_stream, line);
+			get_elements(elements_stream, line);
+			get_boundaries(boundaries_stream, line);
+			this->initialized_flag_ = true;
+			return EXIT_SUCCESS;
+		}
+};
+
+
 std::vector<std::string> split(const std::string& input, char delimiter){
 	std::vector<std::string> tokens;
 	std::string token;

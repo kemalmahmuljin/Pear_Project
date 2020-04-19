@@ -316,6 +316,19 @@ int test_concentration_model_3(){
 	return EXIT_SUCCESS;
 }
 
+int test_new_inporter(){
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterText<double> mesh_importer("../Input/matlab_mesh");
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.solve_stepped_nonlinear_model(14);
+	return EXIT_SUCCESS;
+}
+
 int test_linear_solver_analytical(){
 	std::ofstream myfile;
 	myfile.open("mesh_convergence", std::ios::out);
@@ -587,6 +600,6 @@ int test_jacobian_convergence(){
 }
 
 int main(){
-	test_jacobian_convergence();
+	test_new_inporter();
 	return EXIT_SUCCESS;
 }
