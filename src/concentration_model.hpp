@@ -314,7 +314,6 @@ class ConcentrationModel{
 			generate_f_vector();
 			add_constants_to_f(const_1, const_2);
 			solve_linear_model();
-			//gsl_vector_scale(coefficients_, 0.17);
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
 			add_linear_approx_to_f_vector();
@@ -403,6 +402,14 @@ class ConcentrationModel{
 			gsl_multiroot_fdfsolver* nonlinear_solver = 
 				gsl_multiroot_fdfsolver_alloc(nonlinear_solver_type,
 						(size_t)(2*number_nodes_));
+		
+			std::ofstream myfile;
+			myfile.open("residul_norm1", std::ios::out);
+			gsl_vector* residual_vect;
+			residual_vect = gsl_vector_alloc(2*number_nodes_);
+			precision_t resid_norm = 0;
+
+		
 			generate_stiffness_matrix();
 			generate_f_vector();
 			
@@ -426,17 +433,20 @@ class ConcentrationModel{
 					coefficients_);
 			int count = 1;
 			do {
-				std::cout<<"Iteration "<<count<<std::endl;
-				std::cout<<FEM_module::vector_to_string(coefficients_)<<
-					std::endl;
 				gsl_multiroot_fdfsolver_iterate(nonlinear_solver);
 				condition = gsl_multiroot_test_residual(
-						gsl_multiroot_fdfsolver_f(nonlinear_solver), 1e-9);
+						gsl_multiroot_fdfsolver_f(nonlinear_solver), 1e-20);
 				count++;
+				
+				// Compute residuals
+				nls_functor(coefficients_, NULL, residual_vect);
+				resid_norm = norm_1(residual_vect);
+				myfile<<resid_norm<<std::endl;
+
 			} while(condition != GSL_SUCCESS);
 			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
-			
 			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
+			myfile.close();
 			return EXIT_SUCCESS;
 		}
 

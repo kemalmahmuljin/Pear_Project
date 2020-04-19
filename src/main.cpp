@@ -332,11 +332,11 @@ int test_linear_solver_analytical(){
 	double radius = 0.06;
 	double c0_u = 2.0;
 	double c2_u = (c0_u - FEM_module::ElementTriangular<double>::C_U_AMB)/
-		(2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
+		(-2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
 		 FEM_module::ElementBoundary<double>::RHO_U - pow(radius, 2));
-	double c0_v = 1.0;
+	double c0_v = 25.0;
 	double c2_v = (c0_v - FEM_module::ElementTriangular<double>::C_V_AMB)/
-		(2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
+		(-2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
 		 FEM_module::ElementBoundary<double>::RHO_V - pow(radius, 2));
 	std::string filename;
 	double r, z, val_u, val_v;
@@ -418,11 +418,11 @@ int test_linear_solver(){
 	double val_v = 0;
 	double c0_u = 2.0;
 	double c2_u = (c0_u - FEM_module::ElementTriangular<double>::C_U_AMB)/
-		(2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
+		(-2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
 		 FEM_module::ElementBoundary<double>::RHO_U - pow(radius, 2));
-	double c0_v = 1.0;
+	double c0_v = 25.0;
 	double c2_v = (c0_v - FEM_module::ElementTriangular<double>::C_V_AMB)/
-		(2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
+		(-2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
 		 FEM_module::ElementBoundary<double>::RHO_V - pow(radius, 2));
 	gsl_vector* wanted_coeff;
 	wanted_coeff = gsl_vector_alloc(2*model.number_nodes());
@@ -530,7 +530,63 @@ int test_jacobian(){
 	return EXIT_SUCCESS;
 }
 
+int test_jacobian_convergence(){
+	std::ofstream myfile;
+	myfile.open("fd_convergence", std::ios::out);
+	std::vector<double> interior_point{0.01, 0.06};
+	gsl_vector* x;
+	gsl_vector* f_val;
+	gsl_matrix* jac;
+	gsl_matrix* jac_fd;
+	gsl_matrix* stiff;
+	double norm_jac = 0;
+	double norm_delta = 0;
+	std::vector<double> eps_vect = {1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8};
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	x = gsl_vector_alloc(2*model.number_nodes());
+	f_val = gsl_vector_alloc(2*model.number_nodes());
+	for (size_t idx_0 = 0; idx_0 < (size_t)model.number_nodes(); idx_0 ++){
+		gsl_vector_set(x, idx_0, 101300*0.208/(8.314*298.15));
+		gsl_vector_set(x, idx_0 + model.number_nodes(), 
+				101300*0.0004/(8.314*298.15));
+	}
+	jac = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+	jac_fd = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+	stiff = gsl_matrix_alloc(2*model.number_nodes(), 2*model.number_nodes());
+
+	gsl_spmatrix_sp2d(stiff, model.stiffness_matrix());
+	FEM_module::NonLinearSystemFunctor<double> 
+		nls_functor(model);
+	FEM_module::JacobianFunctor<double> 
+		jac_functor(model);
+	FEM_module::FiniteDifferenceFunctor<double> 
+		fd_functor(model, nls_functor, eps_vect[0]);
+	for (int iter = 0; iter < eps_vect.size(); iter++){
+		fd_functor.change_epsilon(eps_vect[iter]);
+		jac_functor(x, NULL, jac);
+		fd_functor(x, NULL, jac_fd);
+		gsl_matrix_sub(jac, stiff);
+		gsl_matrix_sub(jac_fd, stiff);
+		for (size_t idx_1 = 0; idx_1 < jac->size1; idx_1++){
+			for (size_t idx_2 = 0; idx_2 < jac->size1; idx_2++){
+				norm_jac += std::pow(gsl_matrix_get(jac, idx_1, idx_2), 2);
+				norm_delta += std::pow(gsl_matrix_get(jac, idx_1, idx_2) -
+						gsl_matrix_get(jac_fd, idx_1, idx_2), 2);
+			}
+		}
+		myfile<<eps_vect[iter]<<" "<<norm_delta/norm_jac<<std::endl;
+	}
+	gsl_vector_free(x);
+	gsl_matrix_free(jac);
+	gsl_matrix_free(jac_fd);
+	myfile.close();
+	return EXIT_SUCCESS;
+}
+
 int main(){
-	test_linear_solver_analytical();
+	test_jacobian_convergence();
 	return EXIT_SUCCESS;
 }

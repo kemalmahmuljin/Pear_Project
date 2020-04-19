@@ -117,6 +117,10 @@ class ElementTriangular : public Element<P>{
 
 		bool is_point_interior(precision_t r, precision_t z, 
 				const std::vector<std::vector<precision_t>>& coordinates){
+			/*
+			 * Checks if a point r, z is interior to the element (function used
+			 * for debugging purposes)
+			*/
 			precision_t r1 = coordinates[this->nodes_[0]][0];
 			precision_t r2 = coordinates[this->nodes_[1]][0];
 			precision_t r3 = coordinates[this->nodes_[2]][0];
@@ -134,6 +138,10 @@ class ElementTriangular : public Element<P>{
 		int get_cons_at(precision_t r, precision_t z,
 			const std::vector<std::vector<precision_t>>& coordinates,
 			gsl_vector* coefficients, std::vector<precision_t>& res){
+			/*
+			 * gets the concentration at value r, z (function used
+			 * for debugging purposes)
+			*/
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
 			node_t n_3 = this->nodes_[2];
@@ -173,18 +181,34 @@ class ElementTriangular : public Element<P>{
 		}
 
 		precision_t phi_1(precision_t epsilon, precision_t eta){
+			/*
+			 * returns the value of phi_1 evaluated at 
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			return 1 - epsilon - eta;
 		}
 		
 		precision_t phi_2(precision_t epsilon, precision_t eta){
+			/*
+			 * returns the value of phi_2 evaluated at 
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			return epsilon;
 		}
 		
 		precision_t phi_3(precision_t epsilon, precision_t eta){
+			/*
+			 * returns the value of phi_3 evaluated at 
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			return eta;
 		}
 
 		precision_t phi(precision_t epsilon, precision_t eta, int idx){
+			/*
+			 * returns the value of phi_idx evaluated at 
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			assert((idx > 0) && (idx < 4));
 			if (idx == 1){
 				return phi_1(epsilon, eta);
@@ -204,6 +228,10 @@ class ElementTriangular : public Element<P>{
 	public:
 		precision_t r_u(const gsl_vector* coefficients, 
 				precision_t epsilon, precision_t eta){
+			/*
+			 * returns the value of Ru(Cu,Cv) evaluated at coefficients, and in
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			precision_t p_1 = phi_1(epsilon, eta);
 			precision_t p_2 = phi_2(epsilon, eta);
 			precision_t p_3 = phi_3(epsilon, eta);
@@ -225,6 +253,12 @@ class ElementTriangular : public Element<P>{
 		}
 
 		precision_t diff_r_u(const gsl_vector* coefficients, int coeff_idx){
+			/*
+			 * returns the derivative of Ru(Cu,Cv) whit respect to 
+			 * C_{coeff_idx}. Where coeff_idx maps is {1,2,3} corresponding to
+			 * the coefficient C_u in node_1, node_2, node_3, and {4,5,6} for
+			 * the coefficients C_v in node_1, node_2, node_3.
+			*/
 			assert((coeff_idx > 0) && (coeff_idx < 7));
 			node_t node_num = (coeff_idx - 1)%3;
 			precision_t c_u = gsl_vector_get(coefficients, 
@@ -245,6 +279,10 @@ class ElementTriangular : public Element<P>{
 
 		precision_t r_v(const gsl_vector* coefficients, 
 				precision_t epsilon, precision_t eta){
+			/*
+			 * returns the valuue of Rv(Cu,Cv) evaluated at coefficients, and in
+			 * possition epsilon, eta of the local coordinates 
+			*/
 			precision_t p_1 = phi_1(epsilon, eta);
 			precision_t p_2 = phi_2(epsilon, eta);
 			precision_t p_3 = phi_3(epsilon, eta);
@@ -260,6 +298,12 @@ class ElementTriangular : public Element<P>{
 		}
 
 		precision_t diff_r_v(const gsl_vector* coefficients, int coeff_idx){
+			/*
+			 * returns the derivative of Rv(Cu,Cv) whit respect to 
+			 * C_{coeff_idx}. Where coeff_idx maps is {1,2,3} corresponding to
+			 * the coefficient C_u in node_1, node_2, node_3, and {4,5,6} for
+			 * the coefficients C_v in node_1, node_2, node_3.
+			*/
 			assert((coeff_idx > 0) && (coeff_idx < 7));
 			node_t node_num = (coeff_idx - 1)%3;
 			precision_t c_u = gsl_vector_get(coefficients, 
@@ -283,8 +327,8 @@ class ElementTriangular : public Element<P>{
 				const std::vector<std::vector<precision_t>>& coordinates){
 			/*
 			 * returns the jacobian of the element, when transformed to a
-			 * rectangle with minnor sides euqal to 1. The jacobian is related
-			 * to the area of the element
+			 * rectangle triangle with minnor sides euqal to 1. The jacobian is
+			 * related to the area of the element as J/2 = area
 			*/
 			precision_t r1 = coordinates[this->nodes_[0]][0];
 			precision_t r2 = coordinates[this->nodes_[1]][0];
@@ -300,11 +344,9 @@ class ElementTriangular : public Element<P>{
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx){
 			/*
-			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z)*J for the domain
-			 * omega transformed to a rectangular domain with boundaries [0,1]
-			 * and [0,1], it saves the results for phi_j (j=1:3) inside 
-			 * integrand_res.
-			 * Note that integrand_v hast 3 components, it's not a gloval ector
+			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z) for the domain 
+			 * omega transformed to a triangular domain with boundaries [0,1],
+			 * [0,1] and [0,0],
 			*/
 			assert((node_idx > 0) && (node_idx < 4));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
@@ -331,11 +373,9 @@ class ElementTriangular : public Element<P>{
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx){
 			/*
-			 * returns the integrand r*R_u(C_u,C_v)*phi_j(r,z) for the domain 
-			 * omega transformed to a rectangular domain with boundaries [0,1]
-			 * and [0,1], it saves the results for phi_j (j=1:3) inside 
-			 * integrand_res.
-			 * Note that integrand_v hast 3 components, it's not a gloval ector
+			 * returns the integrand r*R_v(C_u,C_v)*phi_j(r,z) for the domain 
+			 * omega transformed to a triangular domain with boundaries [0,1],
+			 * [0,1] and [0,0],
 			*/
 			assert((node_idx > 0) && (node_idx < 4));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
@@ -395,6 +435,12 @@ class ElementTriangular : public Element<P>{
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx, int coef_idx){
+			/*
+			 * Computes the value of the differenciated integrand of the u
+			 * equations, node_idx represents the row to wich the integrand
+			 * belongs, and coeff_idx the number of the coefficient that
+			 * differentiates the equation
+			*/
 			assert((coef_idx > 0) && (coef_idx < 7));
 			assert((node_idx >= 0) && (node_idx < 3));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
@@ -437,6 +483,12 @@ class ElementTriangular : public Element<P>{
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				node_t node_idx, int coef_idx){
+			/*
+			 * Computes the value of the differenciated integrand of the v
+			 * equations, node_idx represents the row to wich the integrand
+			 * belongs, and coeff_idx the number of the coefficient that
+			 * differentiates the equation
+			*/
 			assert((coef_idx > 0) && (coef_idx < 7));
 			assert((node_idx >= 0) && (node_idx < 3));
 			precision_t r1 = coordinates[this->nodes_[0]][0];
@@ -479,21 +531,19 @@ class ElementTriangular : public Element<P>{
 		int integrate_non_linear_term(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_vector* result_vector){
+			/*
+			 * Computes the value of the nonlinear function H at the value
+			 * coefficients.
+			*/
 			precision_t result_u;
 			precision_t result_v;
 			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
-				result_u = (
-					integrand_u(0.5, 0, coefficients, coordinates, phi_idx) +
-					integrand_u(0, 0.5, coefficients, coordinates, phi_idx) +
-					integrand_u(0.5, 0.5, coefficients, coordinates, phi_idx)
-					)/6;
+				result_u = integrand_u(1.0/3.0, 1.0/3.0, coefficients, coordinates, 
+						phi_idx);
 
-				result_v = (
-					integrand_v(0.5, 0, coefficients, coordinates, phi_idx) +
-					integrand_v(0, 0.5, coefficients, coordinates, phi_idx) +
-					integrand_v(0.5, 0.5, coefficients, coordinates, phi_idx)
-					)/6;
+				result_v = integrand_v(1.0/3.0, 1.0/3.0, coefficients, coordinates, 
+						phi_idx); 
 
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
@@ -512,21 +562,18 @@ class ElementTriangular : public Element<P>{
 		int integrate_analytical_resp(
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_vector* result_vector, precision_t cu_2, precision_t cv_2){
+			/*
+			 * Computes the integral of the proposed analytical solution on the
+			 * element domain
+			*/
 			precision_t result_u;
 			precision_t result_v;
 			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
-				result_u = (
-					integrand_analytical_u(0.5, 0, coordinates, phi_idx, cu_2) +
-					integrand_analytical_u(0, 0.5, coordinates, phi_idx, cu_2) +
-					integrand_analytical_u(0.5, 0.5, coordinates, phi_idx, cu_2)
-					)/6;
-
-				result_v = (
-					integrand_analytical_v(0.5, 0, coordinates, phi_idx, cv_2) +
-					integrand_analytical_v(0, 0.5, coordinates, phi_idx, cv_2) +
-					integrand_analytical_v(0.5, 0.5, coordinates, phi_idx, cv_2)
-					)/6;
+				result_u = integrand_analytical_u(1.0/3.0, 1.0/3.0, coordinates, 
+						phi_idx, cu_2);
+				result_v = integrand_analytical_v(1.0/3.0, 1.0/3.0, coordinates, 
+						phi_idx, cv_2);
 
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
@@ -535,7 +582,7 @@ class ElementTriangular : public Element<P>{
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx] + NUM_NODES), 
 						gsl_vector_get(result_vector, 
-							(size_t)(this->nodes_[node_idx] + NUM_NODES)) + 
+							(size_t)(this->nodes_[node_idx] + NUM_NODES)) - 
 						result_v);
 				phi_idx++;
 			}
@@ -545,6 +592,11 @@ class ElementTriangular : public Element<P>{
 		int update_with_jacobian(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_matrix* result_matrix){
+			/*
+			 * Updates result_matrix with the local contribution to the
+			 * jacobian computed at coefficients, method used by the 
+			 * nonliner solver
+			*/
 			precision_t result_uu;
 			precision_t result_uv;
 			precision_t result_vu;
@@ -555,41 +607,17 @@ class ElementTriangular : public Element<P>{
 				node_1 = this->nodes_[node_idx];
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 					node_2 = this->nodes_[coeff_idx - 1];	
-					result_uu = (
-						diff_integrand_u(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx) + 
-						diff_integrand_u(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx) +
-						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx)
-						)/6;
+					result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx); 
 
-					result_uv = (
-						diff_integrand_u(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx + 3) + 
-						diff_integrand_u(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3) +
-						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3)
-						)/6;
+					result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx + 3);
 
-					result_vu = (
-						diff_integrand_v(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx) + 
-						diff_integrand_v(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx) +
-						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx)
-						)/6;
+					result_vu = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx);
 
-					result_vv = (
-						diff_integrand_v(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx + 3) + 
-						diff_integrand_v(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3) +
-						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3)
-						)/6;
+					result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx + 3);
 
 					gsl_matrix_set(result_matrix, 
 							node_1, node_2, gsl_matrix_get(result_matrix, 
@@ -612,17 +640,103 @@ class ElementTriangular : public Element<P>{
 		}
 	
 
-/*
- *
- *BEGINING OF NEW APPROACH
- *
- *
- * */	
+		int update_sp_with_linearized_int_0(
+				const gsl_vector* coefficients,
+				const std::vector<std::vector<precision_t>>& coordinates,
+				gsl_spmatrix* global_stiffness){
+			/*
+			 * Updates global_stiffness with the approximation of H obtained by
+			 * dropping terms and generatin a linear H.
+			*/
+			node_t n_1 = this->nodes_[0];
+			node_t n_2 = this->nodes_[1];
+			node_t n_3 = this->nodes_[2];
+			precision_t r1 = coordinates[n_1][0];
+			precision_t r2 = coordinates[n_2][0];
+			precision_t r3 = coordinates[n_3][0];
+
+			precision_t r_u1 = V_MU/K_MU;
+			precision_t r_u2 = V_MU/K_MU;
+			precision_t r_u3 = V_MU/K_MU;
+
+			precision_t r_v1 = RESP_Q*V_MU/K_MU;
+			precision_t r_v2 = RESP_Q*V_MU/K_MU;
+			precision_t r_v3 = RESP_Q*V_MU/K_MU;
+
+			precision_t	s11 = jacobian(coordinates)*(6*r1 + 2*r2 + 2*r3)/120;
+			precision_t	s12 = jacobian(coordinates)*(2*r1 + 2*r2 + r3)/120;
+			precision_t	s13 = jacobian(coordinates)*(2*r1 + r2 + 2*r3)/120;
+			precision_t	s22 = jacobian(coordinates)*(2*r1 + 6*r2 + 2*r3)/120;
+			precision_t	s23 = jacobian(coordinates)*(r1 + 2*r2 + 2*r3)/120;
+			precision_t	s33 = jacobian(coordinates)*(2*r1 + 2*r2 + 6*r3)/120;
+			
+			gsl_spmatrix_set(global_stiffness, n_1, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_1, n_1) + 
+					r_u1*s11);
+			gsl_spmatrix_set(global_stiffness, n_1, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_1, n_2) + 
+					r_u2*s12);
+			gsl_spmatrix_set(global_stiffness, n_1, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_1, n_3) + 
+					r_u3*s13);
+			gsl_spmatrix_set(global_stiffness, n_2, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_2, n_1) + 
+					r_u1*s12);
+			gsl_spmatrix_set(global_stiffness, n_2, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_2, n_2) + 
+					r_u2*s22);
+			gsl_spmatrix_set(global_stiffness, n_2, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_2, n_3) + 
+					r_u3*s23);
+			gsl_spmatrix_set(global_stiffness, n_3, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_3, n_1) + 
+					r_u1*s13);
+			gsl_spmatrix_set(global_stiffness, n_3, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_3, n_2) + 
+					r_u2*s23);
+			gsl_spmatrix_set(global_stiffness, n_3, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_3, n_3) + 
+					r_u3*s33);
+			
+			gsl_spmatrix_set(global_stiffness, n_1 + NUM_NODES, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_1 + NUM_NODES, n_1)
+					- r_v1*s11);
+			gsl_spmatrix_set(global_stiffness, n_1 + NUM_NODES, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_1 + NUM_NODES, n_2)
+					- r_v2*s12);
+			gsl_spmatrix_set(global_stiffness, n_1 + NUM_NODES, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_1 + NUM_NODES, n_3)
+					- r_v3*s13);
+			gsl_spmatrix_set(global_stiffness, n_2 + NUM_NODES, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_2 + NUM_NODES, n_1)
+					- r_v1*s12);
+			gsl_spmatrix_set(global_stiffness, n_2 + NUM_NODES, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_2 + NUM_NODES, n_2)
+					- r_v2*s22);
+			gsl_spmatrix_set(global_stiffness, n_2 + NUM_NODES, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_2 + NUM_NODES, n_3)
+					- r_v3*s23);
+			gsl_spmatrix_set(global_stiffness, n_3 + NUM_NODES, n_1, 
+					gsl_spmatrix_get(global_stiffness, n_3 + NUM_NODES, n_1)
+					- r_v1*s13);
+			gsl_spmatrix_set(global_stiffness, n_3 + NUM_NODES, n_2, 
+					gsl_spmatrix_get(global_stiffness, n_3 + NUM_NODES, n_2)
+					- r_v2*s23);
+			gsl_spmatrix_set(global_stiffness, n_3 + NUM_NODES, n_3, 
+					gsl_spmatrix_get(global_stiffness, n_3 + NUM_NODES, n_3)
+					- r_v3*s33);
+			
+			return EXIT_SUCCESS;
+		}
 		
 		int update_sp_with_linearized_int_2(
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_spmatrix* global_stiffness){
+			/*
+			 * Updates global_stiffness with the linear approximation obtained
+			 * by represention the H function in the phi basis
+			*/
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
 			node_t n_3 = this->nodes_[2];
@@ -771,6 +885,10 @@ class ElementTriangular : public Element<P>{
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates, 
 				global_vect_t* vector_f){
+			/*
+			 * Updates the f vector with the aproximation obtained by
+			 * representing the nonlinear function in the phi basis
+			*/
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
 			node_t n_3 = this->nodes_[2];
@@ -858,20 +976,13 @@ class ElementTriangular : public Element<P>{
 			return EXIT_SUCCESS;	
 		}
 
-/*
- *
- *END OF NEW APPROACH
- *
- *
- * */
-
-
-
-
-
 		int update_sp_with_jacobian(const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_spmatrix* result_matrix){
+			/*
+			 * Updates result_matrix with te contribution to the jacobian of the
+			 * element
+			*/
 			precision_t result_uu = 0;
 			precision_t result_uv = 0;
 			precision_t result_vu = 0;
@@ -882,41 +993,17 @@ class ElementTriangular : public Element<P>{
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 				node_1 = this->nodes_[node_idx];	
 				node_2 = this->nodes_[coeff_idx - 1];	
-				result_uu = (
-					diff_integrand_u(0.5, 0, coefficients, coordinates,
-						node_idx, coeff_idx) + 
-					diff_integrand_u(0, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx) +
-					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx)
-					)/6;
+				result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients,
+						coordinates, node_idx, coeff_idx); 
 
-				result_uv = (
-					diff_integrand_u(0.5, 0, coefficients, coordinates,
-						node_idx, coeff_idx + 3) + 
-					diff_integrand_u(0, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx + 3) +
-					diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx + 3)
-					)/6;
+				result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
+						coordinates, node_idx, coeff_idx + 3);
 
-				result_vu = (
-					diff_integrand_v(0.5, 0, coefficients, coordinates,
-						node_idx, coeff_idx) + 
-					diff_integrand_v(0, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx) +
-					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx)
-					)/6;
+				result_vu = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+						coordinates, node_idx, coeff_idx);
 
-				result_vv = (
-					diff_integrand_v(0.5, 0, coefficients, coordinates,
-						node_idx, coeff_idx + 3) + 
-					diff_integrand_v(0, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx + 3) +
-					diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-						node_idx, coeff_idx + 3)
-					)/6;
+				result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+						coordinates, node_idx, coeff_idx + 3); 
 
 				gsl_spmatrix_set(result_matrix, 
 						node_1, node_2, gsl_spmatrix_get(result_matrix, 
@@ -942,7 +1029,7 @@ class ElementTriangular : public Element<P>{
 				const std::vector<std::vector<precision_t>>& coordinates,
 				stiff_mat_t* global_stiffness){
 			/*
-			Updates the global stiffness matrix
+			 * Updates the global_stiffness, using the local stiffness matrix
 			*/
 			node_t n_1 = this->nodes_[0];
 			node_t n_2 = this->nodes_[1];
@@ -1038,6 +1125,10 @@ class ElementTriangular : public Element<P>{
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates, 
 				global_vect_t* vector_f){
+			/*
+			 * Updates the f vector with the constant vector obtained by
+			 * linearising the non linear function H using Taylor approximation
+			*/
 			integrate_non_linear_term(coefficients, coordinates, vector_f);
 			
 			precision_t result_uu = 0;
@@ -1048,41 +1139,17 @@ class ElementTriangular : public Element<P>{
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 					node_1 = this->nodes_[node_idx];	
-					result_uu = (
-						diff_integrand_u(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx) + 
-						diff_integrand_u(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx) +
-						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx)
-						)/6;
+					result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx);
 
-					result_uv = (
-						diff_integrand_u(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx + 3) + 
-						diff_integrand_u(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3) +
-						diff_integrand_u(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3)
-						)/6;
+					result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx + 3);
 
-					result_vu = (
-						diff_integrand_v(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx) + 
-						diff_integrand_v(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx) +
-						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx)
-						)/6;
+					result_vu =	diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx);
 
-					result_vv = (
-						diff_integrand_v(0.5, 0, coefficients, coordinates,
-							node_idx, coeff_idx + 3) + 
-						diff_integrand_v(0, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3) +
-						diff_integrand_v(0.5, 0.5, coefficients, coordinates,
-							node_idx, coeff_idx + 3)
-						)/6;
+					result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
+							coordinates, node_idx, coeff_idx + 3);
 
 					gsl_vector_set(vector_f, node_1,
 							gsl_vector_get(vector_f, node_1) 
