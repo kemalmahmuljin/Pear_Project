@@ -10,7 +10,7 @@ coords = dlmread('../output/coords', ' ', 1, 0);
 coords = coords(:, 1:2);
 %}
 %% These are configs for Matlab Mesh
-%{
+%%{
 boundaries = dlmread('../output/M_boundaries');
 boundaries = boundaries(:, 1:3);
 elements = dlmread('../output/M_elements');
