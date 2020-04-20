@@ -1,4 +1,4 @@
-function jacob = jacobian_integrandE(elements, coords, V_MU, K_MU, RESP_Q)
+function jacob = neglecting_linearization(elements, coords, V_MU, K_MU, RESP_Q)
     % Determine number of nodes
 	nodes = size(coords,1);
     % Initialize Jacobian
