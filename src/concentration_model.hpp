@@ -275,7 +275,7 @@ class ConcentrationModel{
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-7;
+			const precision_t tolerance = 1.0e-9;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -286,7 +286,7 @@ class ConcentrationModel{
 			int status;
 			gsl_vector_scale(f_vector_, -1.0);
 			gsl_vector_set_zero(coefficients_);
-			
+			stiff_mat_cc = gsl_spmatrix_alloc(2*number_nodes_, 2*number_nodes_);
 			stiff_mat_cc = gsl_spmatrix_ccs(stiffness_matrix_);
 			do{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
@@ -326,10 +326,10 @@ class ConcentrationModel{
 			solve_linear_model();
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
-			add_linear_approx_to_f_vector();
+			//add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, 
 					"../output/f_vector_lin");
-			add_linear_approx_to_stiffness();
+			add_linear_respiration();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff_lin");
 			solve_linear_model();
@@ -348,10 +348,10 @@ class ConcentrationModel{
 			solve_linear_model();
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
-			add_linear_approx_to_f_vector();
+			//add_linear_approx_to_f_vector();
 			FEM_module::write_vector_to_file(f_vector_, 
 					"../output/f_vector_lin");
-			add_linear_approx_to_stiffness();
+			add_linear_respiration();
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff_lin");
 			solve_linear_model();
@@ -419,7 +419,6 @@ class ConcentrationModel{
 			residual_vect = gsl_vector_alloc(2*number_nodes_);
 			precision_t resid_norm = 0;
 
-		
 			generate_stiffness_matrix();
 			generate_f_vector();
 			
@@ -519,6 +518,79 @@ class ConcentrationModel{
 			
 			gsl_multiroot_fdfsolver_free(nonlinear_solver);	
 			return EXIT_SUCCESS;
+		}
+
+		int get_new_step(gsl_spmatrix* stiff_mat_cc, gsl_spmatrix* helper_mat, 
+				gsl_vector* helper_f, gsl_vector* helper_dx, 
+				gsl_splinalg_itersolve* work){
+			const precision_t tolerance = 1.0e-9;
+			const size_t max_iter = 200;
+			int status;
+			int iter = 0;
+			gsl_spmatrix_set_zero(helper_mat);
+			gsl_spmatrix_memcpy(helper_mat, stiffness_matrix_);
+			for (auto elem : elements_){
+				elem.update_sp_with_jacobian(coefficients_, coordinates_, 
+						helper_mat);
+			}
+			stiff_mat_cc = gsl_spmatrix_ccs(helper_mat);
+			do{
+				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
+						helper_f, tolerance, helper_dx, work);
+				if (status == GSL_SUCCESS)
+					fprintf(stderr, "Converged\n");
+				if (iter == max_iter){
+					std::cout<<"Limit Reached"<<std::endl;
+					break;
+				}
+			}
+			while (status == GSL_CONTINUE);
+			gsl_vector_sub(coefficients_, helper_dx);
+			return EXIT_SUCCESS;
+		}
+
+		int solve_sparse_nonlinear_model(){
+			const gsl_splinalg_itersolve_type* itersolve_type = 
+				gsl_splinalg_itersolve_gmres;
+			gsl_splinalg_itersolve *work = 
+				gsl_splinalg_itersolve_alloc(itersolve_type, 
+						2*number_nodes_, 0);
+			gsl_spmatrix* stiff_mat_cc;
+			gsl_spmatrix* helper_mat;
+			gsl_vector* help_dx;
+			gsl_vector* f_resid;
+			helper_mat = gsl_spmatrix_alloc(2*number_nodes_, 2*number_nodes_);
+			stiff_mat_cc = gsl_spmatrix_alloc(2*number_nodes_, 2*number_nodes_);
+			help_dx = gsl_vector_calloc(2*number_nodes_);
+			f_resid = gsl_vector_calloc(2*number_nodes_);
+
+			generate_stiffness_matrix();
+			generate_f_vector();
+
+			generate_initial_codition();
+
+			gsl_spblas_dgemv(CblasNoTrans, 1.0, stiffness_matrix_, 
+					coefficients_, 0.0, f_resid);
+			gsl_vector_add(f_resid, f_vector_);
+			get_integral_vector();
+			gsl_vector_add(f_resid, helper_);
+			
+			do{
+				get_new_step(stiff_mat_cc, helper_mat, f_resid, help_dx, work);
+				gsl_vector_set_all(f_resid, 0.0);
+				gsl_spblas_dgemv(CblasNoTrans, 1.0, stiffness_matrix_, 
+						coefficients_, 0.0, f_resid);
+				gsl_vector_add(f_resid, f_vector_);
+				get_integral_vector();
+				gsl_vector_add(f_resid, helper_);
+				std::cout<<norm_1(f_resid)<<std::endl;
+			}
+			while(norm_1(f_resid) > 1e-9);
+			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
+			gsl_splinalg_itersolve_free(work);
+			gsl_spmatrix_free(stiff_mat_cc);
+			gsl_vector_free(help_dx);
+			gsl_vector_free(f_resid);
 		}
 
 		// Output

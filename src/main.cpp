@@ -96,7 +96,7 @@ template <typename P>
 typename FEM_module::Element<P>::node_t 
 	FEM_module::ElementBoundary<P>::NUM_NODES = NUM_NODES_G;
 
-int test2(){
+int test_importer(){
 
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -120,34 +120,6 @@ int test2(){
 	}
 	return EXIT_SUCCESS;
 }
-int test_quadrature(){
-	std::vector<std::vector<double>> coords;
-	std::vector<size_t> nodes;
-	gsl_vector* coeff = gsl_vector_alloc(6);
-	gsl_vector* result = gsl_vector_alloc(6);
-	gsl_vector_set_all(coeff, 1.0);
-	for (size_t i = 0; i < 3; i++){
-		nodes.push_back(i);
-		if (i == 0){
-			coords.push_back(std::vector<double>({0.34, 1.2}));
-		}
-		else if (i == 1){
-			coords.push_back(std::vector<double>({1.70, 0.10}));
-		}
-		else{
-			coords.push_back(std::vector<double>({3.66, 2.50}));
-		}
-	}
-	FEM_module::ElementTriangular<double>::NUM_NODES = 3;
-	FEM_module::ElementTriangular<double> test_element(coords, nodes);
-	test_element.r_u(coeff, 0.5, 0.1);
-	test_element.r_v(coeff, 0.5, 0.1);
-	test_element.integrate_non_linear_term(coeff, coords, result);
-
-	gsl_vector_free(coeff);
-	gsl_vector_free(result);
-	return EXIT_SUCCESS;
-};
 
 int test_pure_diffusion(){
 	std::vector<double> interior_point{0.01, 0.06};
@@ -298,7 +270,7 @@ int test_concentration_model_2(){
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
-	model.solve_nonlinear_model();
+	model.solve_sparse_nonlinear_model();
 	return EXIT_SUCCESS;
 }
 
@@ -318,25 +290,36 @@ int test_concentration_model_3(){
 
 int test_linear_resp(){
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
-	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double> model(mesh_importer, 
-			interior_point);
-	model.write_elements_to_file("../output/elements");
-	model.write_boundaries_to_file("../output/boundaries");
-	model.write_coordinates_to_file("../output/coords");
-	model.generate_stiffness_matrix();
-	model.generate_f_vector();
-	model.solve_linear_model();
-	model.add_linear_respiration();
-	model.solve_linear_model();
-	FEM_module::write_vector_to_file(model.coefficients()
-			, "../output/initial_coeff");
+	std::vector<size_t> nodes_v = {40, 193, 285, 663, 3988, 8034};
+	std::string filename;
+	int count = 1;
+	for (size_t node : nodes_v){
+		filename = "../output/matlab_mesh_" + std::to_string(node);
+		NUM_NODES_G = node;
+		FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementTriangular<double>::NUM_ELM = 0;
+		FEM_module::ImporterText<double> mesh_importer(filename);
+		mesh_importer.process_file();
+		FEM_module::ConcentrationModel<double> model(mesh_importer, 
+				interior_point);
+		
+		model.generate_f_vector();
+		model.generate_stiffness_matrix();
+		model.solve_linear_model();
+		model.add_linear_respiration();
+		model.solve_linear_model();
+		model.write_elements_to_file("../output/elements_" + std::to_string(count));
+		model.write_boundaries_to_file("../output/boundaries_" + std::to_string(count));
+		model.write_coordinates_to_file("../output/coords_" + std::to_string(count));
+		FEM_module::write_vector_to_file(model.coefficients(), "../output/linear_resp_coeff_" + std::to_string(count));
+		count++;
+	}
 	return EXIT_SUCCESS;
 }
 
-int test_new_inporter(){;
-	NUM_NODES_G = 193;
+int test_new_importer(){;
+	NUM_NODES_G = 300;
 	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
 	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
 	std::vector<double> interior_point{0.01, 0.06};
@@ -347,7 +330,12 @@ int test_new_inporter(){;
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
-	model.solve_stepped_nonlinear_model(14);
+	model.generate_f_vector();
+	model.generate_stiffness_matrix();
+	FEM_module::write_vector_to_file(model.coefficients(), 
+		"../output/initial_coeff");
+	
+	model.solve_linear_model_LU();
 	return EXIT_SUCCESS;
 }
 
@@ -732,6 +720,6 @@ int main(int argc, char** argv){
 //	else{
 //		cond2 = correct_option(prompt3, input_3);
 //	}
-	test_linear_solver_analytical();
+	test_concentration_model_2();
 	return EXIT_SUCCESS;
 }
