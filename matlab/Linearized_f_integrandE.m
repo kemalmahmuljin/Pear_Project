@@ -48,7 +48,7 @@ function [F] = Linearized_f_integrandE(elements, coords, epsilon, eta, coefficie
 		c_v = c_v1*phi_1 + c_v2*phi_2 + c_v3*phi_3;
 
         % Evaluating the function in the coefficients
-        Fcu = V_MU*c_u/K_MV; 
+        Fcu = K_MV*V_MU/K_MU; 
         Fcv = RESP_Q*Fcu; % here was a bug
         
         % Updating F vector
@@ -61,17 +61,17 @@ function [F] = Linearized_f_integrandE(elements, coords, epsilon, eta, coefficie
 
         
         % Partial derivatives of respirations
-		ruu = V_MU/K_MU;                
-		ruv = 0;
-		rvu = RESP_Q*ruu;
-		rvv = RESP_Q*ruv;
-
-        % updating F vector with partial derivatives
-        F(n1) = F(n1) - r*(ruu*c_u + ruv*c_v)*phi_1*jac; 
-        F(n2) = F(n2) - r*(ruu*c_u + ruv*c_v)*phi_2*jac;
-        F(n3) = F(n3) - r*(ruu*c_u + ruv*c_v)*phi_3*jac;
-        F(n1 + nodes) = F(n1 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_1*jac;
-        F(n2 + nodes) = F(n2 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_2*jac;
-        F(n3 + nodes) = F(n3 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_3*jac;       
+% 		ruu = V_MU/K_MU;                
+% 		ruv = 0;
+% 		rvu = RESP_Q*ruu;
+% 		rvv = RESP_Q*ruv;
+% 
+%         % updating F vector with partial derivatives
+%         F(n1) = F(n1) - r*(ruu*c_u + ruv*c_v)*phi_1*jac; 
+%         F(n2) = F(n2) - r*(ruu*c_u + ruv*c_v)*phi_2*jac;
+%         F(n3) = F(n3) - r*(ruu*c_u + ruv*c_v)*phi_3*jac;
+%         F(n1 + nodes) = F(n1 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_1*jac;
+%         F(n2 + nodes) = F(n2 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_2*jac;
+%         F(n3 + nodes) = F(n3 + nodes) + r*(rvu*c_u + rvv*c_v)*phi_3*jac;       
     end
 end
