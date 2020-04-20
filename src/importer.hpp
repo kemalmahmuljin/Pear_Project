@@ -29,10 +29,10 @@ class Importer{
 		, initialized_flag_(false)
 		{}
 		Importer(std::string file_path)
-		: file_path_(file_path)
-		, node_matrix_(coord_vector_t())
+		: node_matrix_(coord_vector_t())
 		, element_matrix_(element_vector_t())
 		, boundary_matrix_(element_vector_t())
+		, file_path_(file_path)
 		, initialized_flag_(false)
 		{}
 		
@@ -57,7 +57,6 @@ class Importer{
 		mesh_size_t boundary_num(){
 			return boundary_matrix_.size();
 		}
-
 };
 
 template <typename P>
@@ -74,6 +73,10 @@ class ImporterMsh : public Importer<P>{
 		ImporterMsh(std::string file_path)
 		: Importer<P>(file_path)
 		{}
+		
+		ImporterMsh<precision_t>& operator=(const ImporterMsh<precision_t>& imp){
+			return *this;
+		}
 
 		const coord_vector_t& node_matrix(){
 			return this->node_matrix_;
@@ -240,6 +243,10 @@ class ImporterText : public Importer<P>{
 		const element_vector_t& boundary_matrix(){
 			return this->boundary_matrix_;
 		}
+		
+		ImporterText<precision_t>& operator=(const ImporterText<precision_t>& imp){
+			return *this;
+		}
 
 		int get_node_matrix(std::ifstream& coords_stream, std::string& line){
 
@@ -255,7 +262,7 @@ class ImporterText : public Importer<P>{
 					str_to_num << line_data[i];
 					str_to_num >> help_val;
 					str_to_num.clear();
-					point_data.push_back(help_val/1000.0);
+					point_data.push_back(help_val);
 				}
 				this->node_matrix_.push_back(point_data);
 				point_data.clear();	

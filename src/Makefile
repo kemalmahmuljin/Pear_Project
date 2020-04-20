@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++14 -g -I/usr/local/include
+CXXFLAGS = -std=c++14 -g -I/usr/local/include -Wall
 LDFLAGS = -L/usr/local/lib -lgsl -lgslcblas -lm
 PROG = test
 OBJS = main.o

@@ -58,12 +58,12 @@ class ConcentrationModel{
 		: number_elements_()
 		, number_boundaries_()
 		, number_nodes_()
+		, coordinates_()
 		, elements_(elem_list_t())
 		, boundaries_(bound_list_t())
-		, coordinates_()
 		, f_vector_()
-		, helper_()
 		, coefficients_()
+		, helper_()
 		// once we have an estimate of the number of nonzero elements on the
 		// stiffness matrix it would be better to allocate using 
 		// gsl_spmatrix_alloc_nzmax()
@@ -153,6 +153,14 @@ class ConcentrationModel{
 			}
 			return EXIT_SUCCESS;
 		}
+
+		int add_linear_respiration(){
+			for (auto elem : elements_){
+				elem.update_linear_resp(coefficients_, coordinates_, 
+						stiffness_matrix_);
+			}
+			return EXIT_SUCCESS;
+		}
 		
 		int generate_f_vector(){
 			gsl_vector_set_zero(f_vector_);
@@ -177,6 +185,7 @@ class ConcentrationModel{
 				gsl_vector_set(f_vector_, i + number_nodes_, const_2 + 
 						gsl_vector_get(f_vector_, i + number_nodes_));
 			}
+			return EXIT_SUCCESS;
 		}
 
 		int update_matrix_with_jacobian(gsl_matrix* matrix_to_update){
@@ -201,6 +210,7 @@ class ConcentrationModel{
 				elem.integrate_analytical_resp(coordinates_, f_vector_, cu_2, 
 						cv_2);
 			}
+			return EXIT_SUCCESS;
 		}
 
 		node_t get_element_from_boundarie(const std::vector<node_t>& nodes){
@@ -265,7 +275,7 @@ class ConcentrationModel{
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-9;
+			const precision_t tolerance = 1.0e-7;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -331,7 +341,7 @@ class ConcentrationModel{
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff");
 			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
-		
+			return EXIT_SUCCESS;	
 		}
 
 		int generate_initial_codition(){
@@ -353,7 +363,7 @@ class ConcentrationModel{
 			FEM_module::write_matrix_to_file(stiffness_matrix_, 
 					"../output/stiff");
 			FEM_module::write_vector_to_file(f_vector_, "../output/f_vector");
-		
+			return EXIT_SUCCESS;	
 		}
 
 		int solve_nonlinear_model_fd(){

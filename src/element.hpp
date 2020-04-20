@@ -265,7 +265,6 @@ class ElementTriangular : public Element<P>{
 					(size_t)this->nodes_[node_num]);
 			precision_t c_v = gsl_vector_get(coefficients, 
 					(size_t)(this->nodes_[node_num] + NUM_NODES));
-			precision_t k = 0;
 			if (coeff_idx < 4){
 				return ((V_MU*(K_MU + c_u)*(1.0 + c_v/K_MV) - 
 						V_MU*c_u*(1.0 + c_v/K_MV))/
@@ -540,10 +539,10 @@ class ElementTriangular : public Element<P>{
 			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = integrand_u(1.0/3.0, 1.0/3.0, coefficients, coordinates, 
-						phi_idx);
+						phi_idx)/2.0;
 
 				result_v = integrand_v(1.0/3.0, 1.0/3.0, coefficients, coordinates, 
-						phi_idx); 
+						phi_idx)/2.0; 
 
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
@@ -571,9 +570,9 @@ class ElementTriangular : public Element<P>{
 			int phi_idx = 1;
 			for (int node_idx = 0; node_idx < 3; node_idx++){
 				result_u = integrand_analytical_u(1.0/3.0, 1.0/3.0, coordinates, 
-						phi_idx, cu_2);
+						phi_idx, cu_2)/2.0;
 				result_v = integrand_analytical_v(1.0/3.0, 1.0/3.0, coordinates, 
-						phi_idx, cv_2);
+						phi_idx, cv_2)/2.0;
 
 				gsl_vector_set(result_vector, 
 						(size_t)(this->nodes_[node_idx]), 
@@ -608,16 +607,16 @@ class ElementTriangular : public Element<P>{
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 					node_2 = this->nodes_[coeff_idx - 1];	
 					result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx); 
+							coordinates, node_idx, coeff_idx)/2.0; 
 
 					result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx + 3);
+							coordinates, node_idx, coeff_idx + 3)/2.0;
 
 					result_vu = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx);
+							coordinates, node_idx, coeff_idx)/2.0;
 
 					result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx + 3);
+							coordinates, node_idx, coeff_idx + 3)/2.0;
 
 					gsl_matrix_set(result_matrix, 
 							node_1, node_2, gsl_matrix_get(result_matrix, 
@@ -729,7 +728,7 @@ class ElementTriangular : public Element<P>{
 			return EXIT_SUCCESS;
 		}
 		
-		int update_sp_with_linearized_int_2(
+		int update_linear_resp(
 				const gsl_vector* coefficients,
 				const std::vector<std::vector<precision_t>>& coordinates,
 				gsl_spmatrix* global_stiffness){
@@ -994,16 +993,16 @@ class ElementTriangular : public Element<P>{
 				node_1 = this->nodes_[node_idx];	
 				node_2 = this->nodes_[coeff_idx - 1];	
 				result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients,
-						coordinates, node_idx, coeff_idx); 
+						coordinates, node_idx, coeff_idx)/2.0; 
 
 				result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
-						coordinates, node_idx, coeff_idx + 3);
+						coordinates, node_idx, coeff_idx + 3)/2.0;
 
 				result_vu = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-						coordinates, node_idx, coeff_idx);
+						coordinates, node_idx, coeff_idx)/2.0;
 
 				result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-						coordinates, node_idx, coeff_idx + 3); 
+						coordinates, node_idx, coeff_idx + 3)/2.0; 
 
 				gsl_spmatrix_set(result_matrix, 
 						node_1, node_2, gsl_spmatrix_get(result_matrix, 
@@ -1140,16 +1139,16 @@ class ElementTriangular : public Element<P>{
 				for (int coeff_idx = 1; coeff_idx < 4; coeff_idx++){
 					node_1 = this->nodes_[node_idx];	
 					result_uu = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx);
+							coordinates, node_idx, coeff_idx)/2.0;
 
 					result_uv = diff_integrand_u(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx + 3);
+							coordinates, node_idx, coeff_idx + 3)/2.0;
 
 					result_vu =	diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx);
+							coordinates, node_idx, coeff_idx)/2.0;
 
 					result_vv = diff_integrand_v(1.0/3.0, 1.0/3.0, coefficients, 
-							coordinates, node_idx, coeff_idx + 3);
+							coordinates, node_idx, coeff_idx + 3)/2.0;
 
 					gsl_vector_set(vector_f, node_1,
 							gsl_vector_get(vector_f, node_1) 
