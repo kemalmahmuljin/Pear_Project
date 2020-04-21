@@ -11,14 +11,28 @@ def plot_coeff(coords, coeff):
     x = coords[:,0]
     y = coords[:,1]
     triang1 = mtri.Triangulation(x,y, elements.astype(int))
-    triang2 = mtri.Triangulation(x+0.060,y, elements.astype(int))
+    triang2 = mtri.Triangulation(x+0.120,y, elements.astype(int))
     fig = plt.figure()
-    ax = fig.add_subplot(1,1,1, projection='3d')
-    ax.plot_trisurf(triang1, coeff[coeff.shape[0]//2:], cmap='jet')
-    ax.plot_trisurf(triang2, coeff[:coeff.shape[0]//2], cmap='jet')
-    ax.view_init(elev=90, azim=-90)
-    ax.set_xlim(0,0.120)
+    ax = fig.add_subplot(1,1,1, projection='2d')
+    s1 = ax.plot_trisurf(triang1, coeff[coeff.shape[0]//2:], cmap='jet')
+    s2 = ax.plot_trisurf(triang2, coeff[:coeff.shape[0]//2], cmap='jet')
+    #ax.view_init(elev=90, azim=-90)
+    ax.set_xlim(0,0.180)
     ax.set_ylim(0,0.120)
+    cbaxes1 = fig.add_axes([0.44, 0.3, 0.01, 0.4])  # horizontal, vert, width, height
+    cbaxes2 = fig.add_axes([0.45 + 0.27, 0.3, 0.01, 0.4])  # horizontal, vert, width, height
+    fig.colorbar(s1, shrink=0.5, aspect=5, cax = cbaxes1)
+    fig.colorbar(s2, shrink=0.5, aspect=5, cax = cbaxes2)
+
+    ax.w_zaxis.line.set_lw(0.)
+    ax.set_zticks([])
+    ax.w_yaxis.line.set_lw(0.)
+    ax.set_yticks([])
+    ax.w_xaxis.line.set_lw(0.)
+    ax.set_xticks([])
+
+    plt.text(-150, 8.5, '$CO_2$', fontweight='bold')
+    plt.text(-40, 8.5, '$O_2$', fontweight='bold')
     plt.show()
     #plt.savefig('figure.jpg')
 
