@@ -213,7 +213,47 @@ int test_timing_linear_model(){
 	std::ofstream myfile;
 	myfile.open("../output/lin_mod_runtime", std::ios::out);
 	std::vector<double> interior_point{0.01, 0.06};
-	std::vector<size_t> nodes_v = {15, 40, 193, 285, 663, 3988, 8034};
+	std::vector<size_t> nodes_v = {15, 40, 193, 285, 663, 3988, 8034, 10862};
+	std::string filename;
+	time_t time1;
+	time_t time2;
+	double final_time;
+	for (size_t node : nodes_v){
+		filename = "../output/matlab_mesh_" + std::to_string(node);
+		NUM_NODES_G = node;
+		FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementTriangular<double>::NUM_ELM = 0;
+		FEM_module::ImporterText<double> mesh_importer(filename);
+		mesh_importer.process_file();
+		FEM_module::ConcentrationModel<double> model(mesh_importer, 
+				interior_point);
+
+		model.generate_stiffness_matrix();	
+		model.generate_f_vector();
+		model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+					FEM_module::ElementTriangular<double>::C_V_AMB);
+		model.add_linear_respiration();
+		final_time = 0;
+		for (int it = 0; it < 15; it++){
+			time(&time1);
+			model.solve_linear_model();
+			time(&time2);
+			if (it > 4){
+				final_time += (double)(time2 - time1);
+			}
+		}
+		myfile<<node<<" "<<final_time/10<<std::endl;
+	}
+	myfile.close();
+	return EXIT_SUCCESS;
+}
+
+int test_timing_nonlinear_model(){
+	std::ofstream myfile;
+	myfile.open("../output/nonlin_mod_runtime", std::ios::out);
+	std::vector<double> interior_point{0.01, 0.06};
+	std::vector<size_t> nodes_v = {40, 193, 285, 663};
 	std::string filename;
 	time_t time1;
 	time_t time2;
@@ -229,14 +269,10 @@ int test_timing_linear_model(){
 		FEM_module::ConcentrationModel<double> model(mesh_importer, 
 				interior_point);
 		
-		model.generate_f_vector();
-		model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
-					FEM_module::ElementTriangular<double>::C_V_AMB);
-		model.add_linear_respiration();
 		final_time = 0;
 		for (int it = 0; it < 25; it++){
 			time(&time1);
-			model.solve_linear_model();
+			model.solve_sparse_nonlinear_model();
 			time(&time2);
 			if (it > 4){
 				final_time += (double)(time2 - time1);
@@ -314,11 +350,11 @@ int test_linear_resp(){
 		mesh_importer.process_file();
 		FEM_module::ConcentrationModel<double> model(mesh_importer, 
 				interior_point);
-		
+		model.generate_stiffness_matrix();	
 		model.generate_f_vector();
 		model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
 					FEM_module::ElementTriangular<double>::C_V_AMB);
-		model.add_linear_respiration();
+		model.add_linear_approx_to_stiffness();
 		model.solve_linear_model();
 		model.write_elements_to_file("../output/elements_" + std::to_string(count));
 		model.write_boundaries_to_file("../output/boundaries_" + std::to_string(count));
@@ -645,7 +681,7 @@ int program(std::string input_path){
 	FEM_module::write_vector_to_file(model.coefficients(),
 		   	"../output/initial_coeff");
 	model.generate_initial_codition();
-	model.solve_nonlinear_model();
+	model.solve_sparse_nonlinear_model();
 	FEM_module::write_vector_to_file(model.coefficients(),
 		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
@@ -686,7 +722,8 @@ int main(int argc, char** argv){
 							"11 - Mesh Convergence to Analytical Solution\n"
 							"12 - No O2 model\n"
 							"13 - Jacobian Values\n"
-							"14 - Jacobian Convergence\n";
+							"14 - Jacobian Convergence\n"
+							"15 - Nonnlinear Solver timings\n";
 	int cond1;
 	int cond2;
 	std::string input_path;
@@ -699,7 +736,7 @@ int main(int argc, char** argv){
 		program(input_path);
 	}
 	else{
-		cond2 = correct_option(prompt_test, 1, 14);
+		cond2 = correct_option(prompt_test, 1, 15);
 		switch (cond2){
 			case 1:
 				test_importer();
@@ -742,6 +779,9 @@ int main(int argc, char** argv){
 				break;
 			case 14:
 				test_jacobian_convergence();
+				break;
+			case 15:
+				test_timing_nonlinear_model();
 				break;
 		}
 	}
