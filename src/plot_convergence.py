@@ -1,0 +1,20 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+mesh_data = np.loadtxt('./mesh_convergence')
+plt.subplot(2,1,1)
+plt.plot((np.pi*0.06**2)/mesh_data[:, 0], np.sqrt(mesh_data[:, 1]))
+plt.xscale('log')
+plt.yscale('log')
+plt.title("Mesh Connvergence")
+plt.ylabel(r'$\frac{\|C_u - C_{unum}\|_2}{\|C_u\|_2}$')
+plt.grid()
+plt.subplot(2,1,2)
+plt.plot((np.pi*0.06**2)/mesh_data[:, 0], np.sqrt(mesh_data[:, 2]))
+plt.xscale('log')
+plt.yscale('log')
+plt.ylabel(r'$\frac{\|C_v - C_{vnum}\|_2}{\|C_v\|_2}$')
+plt.xlabel("Element Average Size")
+plt.grid()
+plt.tight_layout()
+plt.show()

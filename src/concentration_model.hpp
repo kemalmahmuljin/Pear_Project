@@ -230,6 +230,14 @@ class ConcentrationModel{
 				coefficients_, coeff);
 			return EXIT_SUCCESS;
 		}
+		
+		int set_coefficients_to_amb(precision_t c_u_amb, precision_t c_v_amb){
+			for (size_t idx = 0; idx < number_nodes_; idx++){
+				gsl_vector_set(coefficients_, idx, c_u_amb);
+				gsl_vector_set(coefficients_, idx + number_nodes_, c_v_amb);
+			}
+			return EXIT_SUCCESS;
+		}
 
 		int get_coeff_vals_at(precision_t r, precision_t z,
 				std::vector<precision_t>& coeff){
@@ -275,7 +283,7 @@ class ConcentrationModel{
 
 		int solve_linear_model(){
 			gsl_spmatrix* stiff_mat_cc;
-			const precision_t tolerance = 1.0e-9;
+			const precision_t tolerance = 1.0e-7;
 			const size_t max_iter = 100000;
 			const gsl_splinalg_itersolve_type* itersolve_type = 
 				gsl_splinalg_itersolve_gmres;
@@ -291,8 +299,6 @@ class ConcentrationModel{
 			do{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
 						f_vector_, tolerance, coefficients_, work);
-				if (status == GSL_SUCCESS)
-					fprintf(stderr, "Converged\n");
 			}
 			while (status == GSL_CONTINUE && ++iter < max_iter);
 
@@ -320,9 +326,8 @@ class ConcentrationModel{
 
 		int generate_initial_codition_cont_resp(precision_t const_1, 
 				precision_t const_2){
-			generate_stiffness_matrix();
-			generate_f_vector();
 			add_constants_to_f(const_1, const_2);
+			gsl_vector_scale(f_vector_, -1.0);
 			solve_linear_model();
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
@@ -345,7 +350,6 @@ class ConcentrationModel{
 		}
 
 		int generate_initial_codition(){
-			solve_linear_model();
 			FEM_module::write_vector_to_file(coefficients_, 
 					"../output/initial_coeff_no_lin");
 			//add_linear_approx_to_f_vector();
@@ -538,7 +542,6 @@ class ConcentrationModel{
 				status = gsl_splinalg_itersolve_iterate(stiff_mat_cc, 
 						helper_f, tolerance, helper_dx, work);
 				if (status == GSL_SUCCESS)
-					fprintf(stderr, "Converged\n");
 				if (iter == max_iter){
 					std::cout<<"Limit Reached"<<std::endl;
 					break;
@@ -563,6 +566,8 @@ class ConcentrationModel{
 			stiff_mat_cc = gsl_spmatrix_alloc(2*number_nodes_, 2*number_nodes_);
 			help_dx = gsl_vector_calloc(2*number_nodes_);
 			f_resid = gsl_vector_calloc(2*number_nodes_);
+			double norm_f_p = 0;
+			double norm_f_c = 1;
 
 			generate_stiffness_matrix();
 			generate_f_vector();
@@ -576,6 +581,7 @@ class ConcentrationModel{
 			gsl_vector_add(f_resid, helper_);
 			
 			do{
+				norm_f_p = norm_f_c;
 				get_new_step(stiff_mat_cc, helper_mat, f_resid, help_dx, work);
 				gsl_vector_set_all(f_resid, 0.0);
 				gsl_spblas_dgemv(CblasNoTrans, 1.0, stiffness_matrix_, 
@@ -583,14 +589,15 @@ class ConcentrationModel{
 				gsl_vector_add(f_resid, f_vector_);
 				get_integral_vector();
 				gsl_vector_add(f_resid, helper_);
-				std::cout<<norm_1(f_resid)<<std::endl;
+				norm_f_c = norm_1(f_resid); 
 			}
-			while(norm_1(f_resid) > 1e-9);
+			while(abs((norm_f_c - norm_f_p)/norm_f_c) > 1e-2);
 			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
 			gsl_splinalg_itersolve_free(work);
 			gsl_spmatrix_free(stiff_mat_cc);
 			gsl_vector_free(help_dx);
 			gsl_vector_free(f_resid);
+			return EXIT_SUCCESS;
 		}
 
 		// Output

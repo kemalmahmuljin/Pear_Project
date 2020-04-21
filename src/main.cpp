@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <chrono>
 #include <thread>
+#include <ctime>
 #ifndef IMPORTER_HPP
 #define IMPORTER_HPP
 #include "importer.hpp"
@@ -164,6 +165,7 @@ int test_pure_diffusion(){
 	}
 	return EXIT_SUCCESS;
 };
+
 int test_constant_resp(){
 	gsl_vector* helper;
 	std::vector<double> interior_point{0.01, 0.06};
@@ -185,83 +187,68 @@ int test_constant_resp(){
 	return EXIT_SUCCESS;
 }
 
-int test_linear_model(){
-	std::ifstream file_stream;
-	std::stringstream str_to_num;
-	std::string line;
-	std::vector<std::string> line_data;
-	gsl_vector* helper;
+int test_initial_cond(){
 	std::vector<double> interior_point{0.01, 0.06};
-	size_t count = 0;
-	double help_num = 0;
-	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
+	std::string filename;
+	filename = "../output/matlab_mesh_6";
+	NUM_NODES_G = 8034;
+	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+	FEM_module::ImporterText<double> mesh_importer(filename);
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
-	model.generate_stiffness_matrix();
-	helper = gsl_vector_alloc((size_t)(2*model.number_nodes()));
 	
-	file_stream.open("../output/f_calc");
-    while (std::getline(file_stream, line)) {
-		if (line == "4"){}
-		else {
-			line_data = FEM_module::split(line, ' ');
-			for (auto val : line_data){
-				std::cout<<val<<std::endl;
-				str_to_num << val;
-				str_to_num >> help_num;
-				gsl_vector_set(helper, count, help_num);
-				str_to_num.clear();
-				count++;
-			}
-		}
-    }
-	count = 0;
-	file_stream.close();
-	//model.set_f_vector(helper);
-
-	FEM_module::write_vector_to_file(helper, "f_cal_loaded");
-	file_stream.open("../output/calculated_coeff");
-	std::getline(file_stream, line);
-    while (std::getline(file_stream, line)) {
-		if (line == "4"){}
-		else {
-			line_data = FEM_module::split(line, ' ');
-			for (auto val : line_data){
-				std::cout<<val<<std::endl;
-				str_to_num << val;
-				str_to_num >> help_num;
-				gsl_vector_set(helper, count, help_num);
-				str_to_num.clear();
-				count++;
-			}
-		}
-    }
-	
-	model.set_f_vector(helper);
-	model.write_elements_to_file("../output/elements");
-	model.write_boundaries_to_file("../output/boundaries");
-	model.write_coordinates_to_file("../output/coords");
-	model.solve_linear_model_LU();
-	FEM_module::write_vector_to_file(model.coefficients(), 
-			"../output/initial_coeff");
-	gsl_vector_sub(helper, model.coefficients());
-	std::cout<<FEM_module::vector_to_string(helper);
-	return EXIT_SUCCESS;
-}
-
-int test_concentration_model_1(){
-	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
-	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double> model(mesh_importer, 
-			interior_point);
-	model.generate_stiffness_matrix();
+	model.generate_f_vector();
+	model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+				FEM_module::ElementTriangular<double>::C_V_AMB);
+	model.add_linear_approx_to_stiffness();
+	model.add_linear_approx_to_f_vector();
 	model.solve_linear_model();
+	FEM_module::write_vector_to_file(model.coefficients(), "../output/initial_coeff");
 	return EXIT_SUCCESS;
 }
 
-int test_concentration_model_2(){
+int test_timing_linear_model(){
+	std::ofstream myfile;
+	myfile.open("../output/lin_mod_runtime", std::ios::out);
+	std::vector<double> interior_point{0.01, 0.06};
+	std::vector<size_t> nodes_v = {15, 40, 193, 285, 663, 3988, 8034};
+	std::string filename;
+	time_t time1;
+	time_t time2;
+	double final_time;
+	for (size_t node : nodes_v){
+		filename = "../output/matlab_mesh_" + std::to_string(node);
+		NUM_NODES_G = node;
+		FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
+		FEM_module::ElementTriangular<double>::NUM_ELM = 0;
+		FEM_module::ImporterText<double> mesh_importer(filename);
+		mesh_importer.process_file();
+		FEM_module::ConcentrationModel<double> model(mesh_importer, 
+				interior_point);
+		
+		model.generate_f_vector();
+		model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+					FEM_module::ElementTriangular<double>::C_V_AMB);
+		model.add_linear_respiration();
+		final_time = 0;
+		for (int it = 0; it < 25; it++){
+			time(&time1);
+			model.solve_linear_model();
+			time(&time2);
+			if (it > 4){
+				final_time += (double)(time2 - time1);
+			}
+		}
+		myfile<<node<<" "<<final_time/20<<std::endl;
+	}
+	myfile.close();
+	return EXIT_SUCCESS;
+}
+
+int test_concentration_model_sparse_nonlinear_solver(){
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -271,10 +258,32 @@ int test_concentration_model_2(){
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
 	model.solve_sparse_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
 }
 
-int test_concentration_model_3(){
+int test_concentration_model_nonlinear(){
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.generate_f_vector();
+	model.generate_stiffness_matrix();
+	model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+				FEM_module::ElementTriangular<double>::C_V_AMB);
+	model.generate_initial_codition();
+	model.solve_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
+	return EXIT_SUCCESS;
+}
+
+int test_concentration_model_stepped_nonlinear(){
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -284,13 +293,15 @@ int test_concentration_model_3(){
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
 	model.solve_stepped_nonlinear_model(14);
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
 }
 
 
 int test_linear_resp(){
 	std::vector<double> interior_point{0.01, 0.06};
-	std::vector<size_t> nodes_v = {40, 193, 285, 663, 3988, 8034};
+	std::vector<size_t> nodes_v = {15, 40, 193, 285, 663, 3988, 8034};
 	std::string filename;
 	int count = 1;
 	for (size_t node : nodes_v){
@@ -305,25 +316,26 @@ int test_linear_resp(){
 				interior_point);
 		
 		model.generate_f_vector();
-		model.generate_stiffness_matrix();
-		model.solve_linear_model();
+		model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+					FEM_module::ElementTriangular<double>::C_V_AMB);
 		model.add_linear_respiration();
 		model.solve_linear_model();
 		model.write_elements_to_file("../output/elements_" + std::to_string(count));
 		model.write_boundaries_to_file("../output/boundaries_" + std::to_string(count));
 		model.write_coordinates_to_file("../output/coords_" + std::to_string(count));
-		FEM_module::write_vector_to_file(model.coefficients(), "../output/linear_resp_coeff_" + std::to_string(count));
+		FEM_module::write_vector_to_file(model.coefficients(), 
+				"../output/linear_resp_coeff_" + std::to_string(count));
 		count++;
 	}
 	return EXIT_SUCCESS;
 }
 
 int test_new_importer(){;
-	NUM_NODES_G = 300;
+	NUM_NODES_G = 285;
 	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
 	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
 	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterText<double> mesh_importer("../Input/matlab_mesh");
+	FEM_module::ImporterText<double> mesh_importer("../output/matlab_mesh_285");
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
@@ -332,10 +344,15 @@ int test_new_importer(){;
 	model.write_coordinates_to_file("../output/coords");
 	model.generate_f_vector();
 	model.generate_stiffness_matrix();
+	model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+				FEM_module::ElementTriangular<double>::C_V_AMB);
+	model.generate_initial_codition();
 	FEM_module::write_vector_to_file(model.coefficients(), 
 		"../output/initial_coeff");
 	
-	model.solve_linear_model_LU();
+	model.solve_sparse_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
 }
 
@@ -420,70 +437,6 @@ int test_linear_solver_analytical(){
 	
 }
 
-int test_linear_solver(){
-	NUM_NODES_G = 779;
-	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
-	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
-	FEM_module::ElementTriangular<double>::SIGMA_UZ = 
-		FEM_module::ElementTriangular<double>::SIGMA_UR;
-	FEM_module::ElementTriangular<double>::SIGMA_VZ = 
-		FEM_module::ElementTriangular<double>::SIGMA_VR;
-	std::vector<double> interior_point{0.01, 0.06};
-	FEM_module::ImporterMsh<double> mesh_importer("../Input/circle.msh");
-	mesh_importer.process_file();
-	FEM_module::ConcentrationModel<double> model(mesh_importer, 
-			interior_point);
-	model.write_elements_to_file("../output/elements");
-	model.write_boundaries_to_file("../output/boundaries");
-	model.write_coordinates_to_file("../output/coords");
-	model.generate_f_vector();
-	model.generate_stiffness_matrix();
-	double radius = 0.06;
-	double r;
-	double z;
-	double val_u = 0;
-	double val_v = 0;
-	double c0_u = 2.0;
-	double c2_u = (c0_u - FEM_module::ElementTriangular<double>::C_U_AMB)/
-		(-2*FEM_module::ElementTriangular<double>::SIGMA_UR*radius/
-		 FEM_module::ElementBoundary<double>::RHO_U - pow(radius, 2));
-	double c0_v = 25.0;
-	double c2_v = (c0_v - FEM_module::ElementTriangular<double>::C_V_AMB)/
-		(-2*FEM_module::ElementTriangular<double>::SIGMA_VR*radius/
-		 FEM_module::ElementBoundary<double>::RHO_V - pow(radius, 2));
-	gsl_vector* wanted_coeff;
-	wanted_coeff = gsl_vector_alloc(2*model.number_nodes());
-	gsl_vector* wanted_f;
-	wanted_f = gsl_vector_calloc(2*model.number_nodes());
-	for (size_t idx = 0; idx < model.number_nodes(); idx++){
-		r = model.coords()[idx][0];
-		z = model.coords()[idx][1];
-		val_u = c0_u + c2_u*(pow(r, 2) + pow(z - 0.07, 2));
-		val_v = c0_v + c2_v*(pow(r, 2) + pow(z - 0.07, 2));
-		gsl_vector_set(wanted_coeff, idx, val_u);
-		gsl_vector_set(wanted_coeff, idx + model.number_nodes(), val_v);
-	}
-	gsl_spblas_dgemv(CblasNoTrans, 1.0, model.stiffness_matrix(), 
-			wanted_coeff, 0.0, wanted_f);
-	gsl_vector_add(wanted_f, model.f_vector());
-	gsl_vector_scale(wanted_f, -1.0);;
-	FEM_module::write_vector_to_file(wanted_f, 
-					"../output/f_vector");
-	gsl_vector_add(wanted_f, model.f_vector());
-	gsl_vector_scale(wanted_f, -1.0);
-	model.set_f_vector(wanted_f);
-	model.solve_linear_model();
-	FEM_module::write_vector_to_file(model.coefficients(), 
-					"../output/initial_coeff");
-	std::cout<<"C0 u: "<<c0_u<<" C0 v: "<<c0_v<<std::endl;
-	std::cout<<"C2 u: "<<c2_u<<" C2 v: "<<c2_v<<std::endl;
-	std::cout<<"C_r u: "<<c0_u + c2_u*radius*radius<<std::endl;
-	std::cout<<"C_r v: "<<c0_v + c2_v*radius*radius<<std::endl;
-	std::cout<<"C_V_AMB: "<<FEM_module::ElementTriangular<double>::C_V_AMB<<std::endl;
-	return EXIT_SUCCESS;
-	
-}
-
 int test_no_o2(){
 	FEM_module::ElementBoundary<double>::C_U_AMB = 0.0;
 	FEM_module::ElementTriangular<double>::C_U_AMB = 0.0;
@@ -493,6 +446,8 @@ int test_no_o2(){
 	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
 	model.solve_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
 }
 
@@ -618,28 +573,32 @@ int configure_case(std::ifstream& input_stream, std::string& line){
 	std::stringstream str_to_num;
 
 	std::getline(input_stream, line);
+	line_data = FEM_module::split(line, ' ');
 	str_to_num << line_data[1];
 	str_to_num >> help_val;
 	str_to_num.clear();
-	TEMP = help_val;
+	TEMP = 273.15 + help_val;
 
 	std::getline(input_stream, line);
+	line_data = FEM_module::split(line, ' ');
 	str_to_num << line_data[1];
 	str_to_num >> help_int;
 	str_to_num.clear();
 	NUM_NODES_G = help_int;
 
 	std::getline(input_stream, line);
+	line_data = FEM_module::split(line, ' ');
 	str_to_num << line_data[1];
 	str_to_num >> help_val;
 	str_to_num.clear();
-	CON_O2 = help_val;
+	CON_O2 = help_val/100.0;
 
 	std::getline(input_stream, line);
+	line_data = FEM_module::split(line, ' ');
 	str_to_num << line_data[1];
 	str_to_num >> help_val;
 	str_to_num.clear();
-	CON_CO2 = help_val;
+	CON_CO2 = help_val/100.0;
 
 	// Element values configuation
 	FEM_module::ElementTriangular<double>::MAX_FERM_CO2 = 1.61e-4*exp(
@@ -679,16 +638,25 @@ int program(std::string input_path){
 	model.write_elements_to_file("../output/elements");
 	model.write_boundaries_to_file("../output/boundaries");
 	model.write_coordinates_to_file("../output/coords");
+	model.generate_stiffness_matrix();
+	model.generate_f_vector();
+	model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+				FEM_module::ElementTriangular<double>::C_V_AMB);
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/initial_coeff");
+	model.generate_initial_codition();
 	model.solve_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
 	return EXIT_SUCCESS;
 }
 
-int correct_option(std::string message, std::vector<int> options){
+int correct_option(std::string message, int min_lim, int max_lim){
 	int res;
 	while (true){
 		std::cout<<message;
 		std::cin>>res;
-		if (std::find(options.begin(), options.end(), res) != options.end()){
+		if ((res > min_lim - 1) && (res < max_lim  + 1)){
 			return res;
 		}
 		std::cout<<"Incorrect option, please press enter to continue"<<
@@ -697,29 +665,85 @@ int correct_option(std::string message, std::vector<int> options){
 }
 
 int main(int argc, char** argv){
-//	std::string prompt1 = "Select action\n" 
-//							"0 - Run case\n" 
-//							"1 - Perform test\n";
-////	std::string prompt2 = "Select mesh type:\n" 
-////							"0 - msh\n" 
-////							"1 - text\n";
-//	std::string prompt3 = "Select Input File: ";
-//	std::vector<int> input_1_2 = {0, 1};
-//	std::vector<int> input_3 = {0, 1, 2, 3, 4, 5};
-//	int cond1;
-////	int cond2;
-//	std::string input_path;
-//
-//	cond1 = correct_option(prompt1, input_1_2);
-//	if (cond1 == 0){
-////		cond2 = correct_option(prompt2, input_1_2);
-//		std::cout<<"Select input file"<<std::endl;
-//		std::cin>>input_path;
-//		program(input_path);
-//	}
-//	else{
-//		cond2 = correct_option(prompt3, input_3);
-//	}
-	test_concentration_model_2();
+	std::string prompt_to_run = "Select action\n" 
+							"0 - Run case\n" 
+							"1 - Perform test\n";
+//	std::string prompt2 = "Select mesh type:\n" 
+//							"0 - msh\n" 
+//							"1 - text\n";
+	std::string prompt_file = "Select Input File: ";
+	std::string prompt_test = "Select Test Case\n"
+							"1 - msh Importer\n"
+							"2 - MATLAB mesh Importer\n"
+							"3 - Pure Diffusion\n"
+							"4 - Arbitrary Constant Respiration\n"
+							"5 - Linear Model (Initial Condition)\n"
+							"6 - Test Timing Linear Model\n"
+							"7 - Sparse Non Linear Solver\n"
+							"8 - Non Linear Solver\n"
+							"9 - Stepped Method\n"
+							"10 - Linear Respiration\n"
+							"11 - Mesh Convergence to Analytical Solution\n"
+							"12 - No O2 model\n"
+							"13 - Jacobian Values\n"
+							"14 - Jacobian Convergence\n";
+	int cond1;
+	int cond2;
+	std::string input_path;
+
+	cond1 = correct_option(prompt_to_run, 0, 1);
+	if (cond1 == 0){
+//		cond2 = correct_option(prompt2, input_1_2);
+		std::cout<<prompt_file<<std::endl;
+		std::cin>>input_path;
+		program(input_path);
+	}
+	else{
+		cond2 = correct_option(prompt_test, 1, 14);
+		switch (cond2){
+			case 1:
+				test_importer();
+				break;
+			case 2:
+				test_new_importer();
+				break;
+			case 3:
+				test_pure_diffusion();
+				break;
+			case 4:
+				test_constant_resp();
+				break;
+			case 5:
+				test_initial_cond();
+				break;
+			case 6:
+				test_timing_linear_model();
+				break;
+			case 7:
+				test_concentration_model_sparse_nonlinear_solver();
+				break;
+			case 8:
+				test_concentration_model_nonlinear();
+				break;
+			case 9:
+				test_concentration_model_stepped_nonlinear();
+				break;
+			case 10:
+				test_linear_resp();
+				break;
+			case 11:
+				test_linear_solver_analytical();
+				break;
+			case 12:
+				test_no_o2();
+				break;
+			case 13:
+				test_jacobian();
+				break;
+			case 14:
+				test_jacobian_convergence();
+				break;
+		}
+	}
 	return EXIT_SUCCESS;
 }

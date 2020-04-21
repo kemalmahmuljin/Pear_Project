@@ -1,5 +1,5 @@
 import numpy as np
-import scipy as sp
+#import scipy as sp
 import matplotlib.pyplot as plt
 import matplotlib.tri as mtri
 from mpl_toolkits.mplot3d import Axes3D
@@ -20,6 +20,7 @@ def plot_coeff(coords, coeff):
     ax.set_xlim(0,0.120)
     ax.set_ylim(0,0.120)
     plt.show()
+    #plt.savefig('figure.jpg')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process some integers.')
