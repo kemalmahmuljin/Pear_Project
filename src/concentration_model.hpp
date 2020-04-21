@@ -279,6 +279,7 @@ class ConcentrationModel{
 						sig_u_z*(coeff_1[1]-coeff_2[1]))/(0.5*bound.length());
 
 			}
+			return EXIT_SUCCESS;
 		}
 
 		int solve_linear_model(){
