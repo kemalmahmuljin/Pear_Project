@@ -98,7 +98,9 @@ typename FEM_module::Element<P>::node_t
 	FEM_module::ElementBoundary<P>::NUM_NODES = NUM_NODES_G;
 
 int test_importer(){
-
+	/*
+	 * Shows the matrices stored in our initial importer
+	*/
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
 	const std::vector<std::vector<double>> coords = 
@@ -123,6 +125,11 @@ int test_importer(){
 }
 
 int test_pure_diffusion(){
+	/*
+	 * Test the pure diffusion model for random ambiance concentrations, the
+	 * test should run in a infinite loop since it chescks if the solution is
+	 * the same as filling the pear with ambiance concentrations
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	gsl_vector* sol_c;
 	gsl_vector* f_vec_mult;
@@ -167,6 +174,9 @@ int test_pure_diffusion(){
 };
 
 int test_constant_resp(){
+	/*
+	 * Tests an arbitrary constant respiration, NOT A VERY USEFUL TEST
+	*/
 	gsl_vector* helper;
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
@@ -188,10 +198,14 @@ int test_constant_resp(){
 }
 
 int test_initial_cond(){
+	/*
+	 * Solves only our initial guess of the solution, saves to
+	 * ../output/initial_coondition, can be plotted using the standard plotter
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	std::string filename;
-	filename = "../output/matlab_mesh_6";
-	NUM_NODES_G = 8034;
+	filename = "../output/matlab_mesh_663";
+	NUM_NODES_G = 663;
 	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
 	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
 	FEM_module::ImporterText<double> mesh_importer(filename);
@@ -210,6 +224,10 @@ int test_initial_cond(){
 }
 
 int test_timing_linear_model(){
+	/*
+	 * Test timmings for the linear respiration, saves the output to
+	 * ../output/lin_mod_runtime 
+	*/
 	std::ofstream myfile;
 	myfile.open("../output/lin_mod_runtime", std::ios::out);
 	std::vector<double> interior_point{0.01, 0.06};
@@ -250,6 +268,10 @@ int test_timing_linear_model(){
 }
 
 int test_timing_nonlinear_model(){
+	/*
+	 * Test timmings for the nonlinear solver, saves the output to
+	 * ../output/nonlin_mod_runtime 
+	*/
 	std::ofstream myfile;
 	myfile.open("../output/nonlin_mod_runtime", std::ios::out);
 	std::vector<double> interior_point{0.01, 0.06};
@@ -285,6 +307,10 @@ int test_timing_nonlinear_model(){
 }
 
 int test_concentration_model_sparse_nonlinear_solver(){
+	/*
+	 * Tests our sparse non linear solver and saves the results to final_coeff,
+	 * can be plotted using the standard plotter
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -300,6 +326,10 @@ int test_concentration_model_sparse_nonlinear_solver(){
 }
 
 int test_concentration_model_nonlinear(){
+	/*
+	 * Tests the non linear solver and saves the results to final_coeff, can be
+	 * plotted using the standard plotter
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -320,6 +350,15 @@ int test_concentration_model_nonlinear(){
 }
 
 int test_concentration_model_stepped_nonlinear(){
+	/*
+	 * Test for a stepped non linear solution, the ambience concentrations are
+	 * increased progressively until the final concentration. In each step the
+	 * solver solves the non linear model with the current ambiance
+	 * concentration, and the final solution of the step is used as the initial
+	 * solution for the next non linear system to solve, with a different
+	 * ambience concentration. The results are saved in final_coeff and can be
+	 * plotted using the standard plotter
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterMsh<double> mesh_importer(FILEPATH);
 	mesh_importer.process_file();
@@ -336,6 +375,12 @@ int test_concentration_model_stepped_nonlinear(){
 
 
 int test_linear_resp(){
+	/*
+	 * The output is written to ../output/linear_resp_coeff_i, where i 
+	 * correspond to the mesh with nodes nodes_v[i]. The result can be plotted
+	 * using python plot_lin_resp.py i, where i is the integer with the mesh to
+	 * be plotted
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	std::vector<size_t> nodes_v = {15, 40, 193, 285, 663, 3988, 8034};
 	std::string filename;
@@ -366,7 +411,13 @@ int test_linear_resp(){
 	return EXIT_SUCCESS;
 }
 
-int test_new_importer(){;
+int test_new_importer(){
+	/*
+	 * This test should produce a solutions with the expected shape. The
+	 * results shoud be plotted using the standard functions, and by inspecting
+	 * those results we can conclude if the new importer works as the original
+	 * one
+	*/
 	NUM_NODES_G = 285;
 	FEM_module::ElementTriangular<double>::NUM_NODES = NUM_NODES_G;
 	FEM_module::ElementBoundary<double>::NUM_NODES = NUM_NODES_G;
@@ -393,6 +444,11 @@ int test_new_importer(){;
 }
 
 int test_linear_solver_analytical(){
+	/*
+	 * This test outputs the relative squared norm of the difference between our
+	 * numerical solution and the analytical one to mesh_convergence file. The
+	 * output can be plotted using "python plot_convergence"
+	*/
 	std::ofstream myfile;
 	myfile.open("mesh_convergence", std::ios::out);
 	FEM_module::ElementTriangular<double>::SIGMA_UZ = 
@@ -474,6 +530,13 @@ int test_linear_solver_analytical(){
 }
 
 int test_no_o2(){
+	/*
+	 * This programs output are the final coefficients, the idea of this test
+	 * was to be sure that if no oxigen was present at the ambiaance, there
+	 * would be no oxigen production inside the pear. The results are in
+	 * final_coeff since it's a solution to the non llinear system. They can be
+	 * plotted using the standard plot function
+	*/
 	FEM_module::ElementBoundary<double>::C_U_AMB = 0.0;
 	FEM_module::ElementTriangular<double>::C_U_AMB = 0.0;
 	std::vector<double> interior_point{0.01, 0.06};
@@ -488,6 +551,12 @@ int test_no_o2(){
 }
 
 int test_jacobian(){
+	/*
+	 * This function just shows the difference the norm of the difference
+	 * between the jacobians computed analytically and using finite
+	 * differences divided by the jacobian of the non linear term. It shows 
+	 * the output in std::cout.
+	*/
 	std::vector<double> interior_point{0.01, 0.06};
 	gsl_vector* x;
 	gsl_vector* f_val;
@@ -549,6 +618,12 @@ int test_jacobian(){
 }
 
 int test_jacobian_convergence(){
+	/*
+	 * This function saves the norm of the difference between the jacobian
+	 * computed using finite differences with multiple steps epsilon, and the
+	 * analytical jacobian. It saves the result to fd_convergence, and it can be
+	 * plotted using "python fd_convergence.py"
+	*/
 	std::ofstream myfile;
 	myfile.open("fd_convergence", std::ios::out);
 	std::vector<double> interior_point{0.01, 0.06};
@@ -656,7 +731,7 @@ int configure_case(std::ifstream& input_stream, std::string& line){
 	return EXIT_SUCCESS;	
 }
 
-int program(std::string input_path){
+int program_matlab(std::string input_path){
 	std::string mesh_file;
 	std::string line;
 	std::ifstream input_stream;
@@ -668,6 +743,37 @@ int program(std::string input_path){
 	
 	std::vector<double> interior_point{0.01, 0.06};
 	FEM_module::ImporterText<double> mesh_importer(mesh_file);
+	mesh_importer.process_file();
+	FEM_module::ConcentrationModel<double> model(mesh_importer, 
+			interior_point);
+	model.write_elements_to_file("../output/elements");
+	model.write_boundaries_to_file("../output/boundaries");
+	model.write_coordinates_to_file("../output/coords");
+	model.generate_stiffness_matrix();
+	model.generate_f_vector();
+	model.set_coefficients_to_amb(FEM_module::ElementTriangular<double>::C_U_AMB, 
+				FEM_module::ElementTriangular<double>::C_V_AMB);
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/initial_coeff");
+	model.generate_initial_codition();
+	model.solve_sparse_nonlinear_model();
+	FEM_module::write_vector_to_file(model.coefficients(),
+		   	"../output/final_coeff");
+	return EXIT_SUCCESS;
+}
+
+int program_gmesh(std::string input_path){
+	std::string mesh_file;
+	std::string line;
+	std::ifstream input_stream;
+	input_stream.open(input_path);
+
+	std::getline(input_stream, line);
+	mesh_file = line;
+	configure_case(input_stream, line);
+	
+	std::vector<double> interior_point{0.01, 0.06};
+	FEM_module::ImporterMsh<double> mesh_importer(mesh_file);
 	mesh_importer.process_file();
 	FEM_module::ConcentrationModel<double> model(mesh_importer, 
 			interior_point);
@@ -704,9 +810,9 @@ int main(int argc, char** argv){
 	std::string prompt_to_run = "Select action\n" 
 							"0 - Run case\n" 
 							"1 - Perform test\n";
-//	std::string prompt2 = "Select mesh type:\n" 
-//							"0 - msh\n" 
-//							"1 - text\n";
+	std::string prompt_mesher = "Select mesh type:\n" 
+							"0 - msh\n" 
+							"1 - matlab\n";
 	std::string prompt_file = "Select Input File: ";
 	std::string prompt_test = "Select Test Case\n"
 							"1 - msh Importer\n"
@@ -726,14 +832,19 @@ int main(int argc, char** argv){
 							"15 - Nonnlinear Solver timings\n";
 	int cond1;
 	int cond2;
+	int cond3;
 	std::string input_path;
 
 	cond1 = correct_option(prompt_to_run, 0, 1);
 	if (cond1 == 0){
-//		cond2 = correct_option(prompt2, input_1_2);
+		cond3 = correct_option(prompt_mesher, 0, 1);
 		std::cout<<prompt_file<<std::endl;
 		std::cin>>input_path;
-		program(input_path);
+		if (cond3 == 0){
+			program_gmesh(input_path);
+		} else{
+			program_matlab(input_path);
+		}
 	}
 	else{
 		cond2 = correct_option(prompt_test, 1, 15);

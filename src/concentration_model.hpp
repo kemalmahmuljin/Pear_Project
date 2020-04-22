@@ -575,6 +575,7 @@ class ConcentrationModel{
 			generate_f_vector();
 
 			generate_initial_codition();
+			FEM_module::write_vector_to_file(coefficients_, "../output/initial_coeff");
 
 			gsl_spblas_dgemv(CblasNoTrans, 1.0, stiffness_matrix_, 
 					coefficients_, 0.0, f_resid);
@@ -593,7 +594,7 @@ class ConcentrationModel{
 				gsl_vector_add(f_resid, helper_);
 				norm_f_c = norm_1(f_resid); 
 			}
-			while(abs((norm_f_c - norm_f_p)/norm_f_c) > 5e-2);
+			while(abs(norm_f_c) > 1e-9);
 			FEM_module::write_vector_to_file(coefficients_, "../output/final_coeff");
 			gsl_splinalg_itersolve_free(work);
 			gsl_vector_free(help_dx);
